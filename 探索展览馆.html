@@ -1,0 +1,3326 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full bg-[#130c08] text-amber-50 select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探索展览馆 - 探索展览馆</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preload" as="image" href="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E9%9B%95%E5%83%8F.jpg" fetchpriority="high">
+    <!-- Three.js for 360 Panorama Scenes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- MediaPipe Hands, Camera Utils & Drawing Utils -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        
+        .font-serif-cn {
+            font-family: 'Noto Serif SC', serif;
+        }
+        .font-calligraphy {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        
+        /* Custom scrollbars in rich dark brown tones */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(19, 12, 8, 0.95);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 4px;
+        }
+
+        /* Enhanced Dark Black-Brown Frosted Glassmorphism Styles */
+        .frosted-panel {
+            background: rgba(28, 17, 11, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(217, 119, 6, 0.35);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85);
+        }
+
+        .frosted-panel-gold {
+            background: rgba(42, 24, 14, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1.5px solid rgba(251, 191, 36, 0.65);
+            box-shadow: 0 0 30px rgba(217, 119, 6, 0.4);
+        }
+
+        /* Pulse glowing animation */
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.9; box-shadow: 0 0 18px rgba(217, 119, 6, 0.7); }
+            50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 32px rgba(251, 191, 36, 1); }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 2.2s infinite ease-in-out;
+        }
+
+        /* Hotspot floating animation */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-7px); }
+        }
+        .animate-float {
+            animation: floatSlow 3.2s infinite ease-in-out;
+        }
+
+        .ceramic-target,.ceramic-piece{position:absolute;width:68px;height:68px;transform:translate(-50%,-50%);z-index:3;transition:transform .2s,filter .2s;}
+        .ceramic-target{opacity:.48;border:3px dashed rgba(220,190,150,.72);background:rgba(80,60,45,.48);box-shadow:inset 0 0 18px rgba(0,0,0,.65);}
+        .ceramic-piece{cursor:grab;z-index:5;box-shadow:0 8px 22px rgba(0,0,0,.55);border:2px solid rgba(255,220,160,.5);}
+        .ceramic-piece:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.08);}
+        .ceramic-piece.placed{filter:brightness(1.15);box-shadow:0 0 24px rgba(251,191,36,.65);}
+        .ceramic-target.filled{opacity:.85;border-style:solid;border-color:rgba(251,191,36,.8);}
+        .ceramic-circle,.ceramic-square{border-radius:50%;}.ceramic-square{border-radius:10px}
+        .ceramic-bottle{width:58px;height:92px;border:2px solid rgba(255,220,160,.58);background:linear-gradient(145deg,rgba(255,255,255,.18),transparent 38%),#a97858;box-shadow:inset 5px 0 12px rgba(255,255,255,.12),inset -7px -9px 16px rgba(35,20,12,.3),0 8px 22px rgba(0,0,0,.55);overflow:hidden}
+        .ceramic-bottle:before{content:"";position:absolute;left:50%;top:-18px;transform:translateX(-50%);width:20px;height:30px;border:2px solid rgba(255,220,160,.55);background:inherit;border-radius:7px 7px 4px 4px;box-shadow:inset 3px 0 6px rgba(255,255,255,.1)}
+        .ceramic-bottle:after{content:"";position:absolute;left:50%;top:7px;transform:translateX(-50%);width:29px;height:8px;border-radius:50%;border:1px solid rgba(255,230,190,.35);background:rgba(50,25,12,.22)}
+        .bottle-a{width:54px;height:94px;border-radius:30% 30% 42% 42%;}.bottle-a:before{width:18px;height:31px}
+        .bottle-b{width:42px;height:100px;border-radius:38% 38% 30% 30%;}.bottle-b:before{width:15px;height:36px}
+        .bottle-c{width:62px;height:88px;border-radius:48% 48% 42% 42%;}.bottle-c:before{width:19px;height:24px}
+        .bottle-d{width:58px;height:96px;border-radius:45% 45% 24% 24%;}.bottle-d:before{width:21px;height:33px}
+        .bottle-e{width:70px;height:78px;border-radius:48% 48% 34% 34%;}.bottle-e:before{width:22px;height:22px}
+        .bottle-f{width:60px;height:102px;border-radius:34% 34% 28% 28%;}.bottle-f:before{width:18px;height:39px}
+        .ceramic-target.ceramic-bottle{background:rgba(80,60,45,.48);box-shadow:inset 0 0 18px rgba(0,0,0,.65);filter:none}
+        .ceramic-bowl{border-radius:10px 10px 48% 48%;height:48px}.ceramic-pot{border-radius:38% 38% 28% 28%;height:62px}.ceramic-diamond{transform:translate(-50%,-50%) rotate(45deg);border-radius:12px;width:58px;height:58px}
+    </style>
+
+<style>
+/* v3 minimal requested visual fixes */
+.frosted-panel,.frosted-panel-gold{background:rgba(18,18,22,.58)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;border-color:rgba(255,255,255,.14)!important;box-shadow:0 10px 35px rgba(0,0,0,.45)!important}
+#flashlight-canvas{filter:drop-shadow(0 0 14px rgba(255,220,140,.2));}
+</style>
+<style>
+/* v5 指定精修：只优化手势预览、手电筒柔边与新增明亮雕像馆 UI */
+#webcam-preview-card{
+  background:linear-gradient(145deg,rgba(12,14,18,.82),rgba(24,22,18,.72))!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+#preview-canvas{transform:scale(1.015);transform-origin:center;opacity:.96}
+#webcam-preview-card .text-xs{letter-spacing:.08em}
+.scene-action-btn{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+</style>
+</head>
+<body class="h-full w-full overflow-hidden font-serif-cn bg-[#130c08] text-amber-50">
+
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playClick() {
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(580, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+            playTone(freq, duration = 0.3) {
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+            playSuccess() {
+                this.init();
+                [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 0.4), i * 120);
+                });
+            }
+            playTorch() {
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+        }
+        const sfx = new SoundFX();
+    </script>
+
+    <script>
+        // Global Scene & Canvas References
+        let scene1Canvas, scene1Ctx, flashlightBufferCanvas, flashlightBufferCtx;
+        const baseImageScene1 = new Image();
+        const spotlightVideoScene1 = document.createElement('video');
+        let isScene1VideoLoaded = false;
+
+        let scene3Canvas, scene3Ctx;
+        const baseImageScene3 = new Image();
+        const spotlightVideoScene3 = document.createElement('video');
+        let isScene3VideoLoaded = false;
+
+        let scene4Canvas, scene4Ctx;
+        const baseImageScene4 = new Image();
+        const spotlightImageScene4 = new Image();
+
+        let muralCanvas, muralCtx;
+        let muralFlashlightBufferCanvas, muralFlashlightBufferCtx;
+        const baseImageMural = new Image();
+        const spotlightVideoMural = document.createElement('video');
+        let isMuralVideoLoaded = false;
+        let isMuralOpen = false;
+
+        let webcamVideo, previewCanvas, previewCtx, handsTracker, cameraUtils;
+
+        let threeScene2, threeCamera2, threeRenderer2;
+        let isUserInteracting2 = false, onPointerDownX2 = 0, onPointerDownY2 = 0, onPointerDownLon2 = 0, onPointerDownLat2 = 0, lon2 = 0, lat2 = 0;
+
+        let threeSceneStatue, threeCameraStatue, threeRendererStatue;
+        let threeScenePaintingWorld, threeCameraPaintingWorld, threeRendererPaintingWorld;
+        let isPaintingWorldOpen = false, isUserInteractingPaintingWorld = false, onPointerDownXPaintingWorld = 0, onPointerDownYPaintingWorld = 0, onPointerDownLonPaintingWorld = 0, onPointerDownLatPaintingWorld = 0, lonPaintingWorld = 0, latPaintingWorld = 0;
+        let isStatueCloseupOpen = false, isUserInteractingStatue = false, onPointerDownXStatue = 0, onPointerDownYStatue = 0, onPointerDownLonStatue = 0, onPointerDownLatStatue = 0, lonStatue = 0, latStatue = 0;
+        let threeSceneInnerKiln, threeCameraInnerKiln, threeRendererInnerKiln;
+        let threeSceneBrightMuseum, threeCameraBrightMuseum, threeRendererBrightMuseum;
+        let threeSceneBrightMural, threeCameraBrightMural, threeRendererBrightMural;
+        let threeSceneBrightStatueNew, threeCameraBrightStatueNew, threeRendererBrightStatueNew;
+        let lonBrightStatueNew=0, latBrightStatueNew=0;
+        let isUserInteractingBrightStatueNew=false;
+        let isUserInteractingBrightMuseum=false, brightMuseumDownX=0, brightMuseumDownY=0, brightMuseumDownLon=0, brightMuseumDownLat=0, lonBrightMuseum=0, latBrightMuseum=0;
+        let isUserInteractingBrightMural=false, brightMuralDownX=0, brightMuralDownY=0, brightMuralDownLon=0, brightMuralDownLat=0, lonBrightMural=0, latBrightMural=0;
+        let isUserInteractingInnerKiln = false, onPointerDownXInnerKiln = 0, onPointerDownYInnerKiln = 0, onPointerDownLonInnerKiln = 0, onPointerDownLatInnerKiln = 0, lonInnerKiln = 0, latInnerKiln = 0;
+        let conversationQueue = [], conversationIndex = 0, conversationAfter = null;
+    </script>
+
+    <div id="app" class="relative w-full h-full flex flex-col overflow-hidden">
+
+        <!-- PROLOGUE COVER INTRO -->
+        <div id="prologue-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-[#0d0704] transition-opacity duration-700">
+            <img src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E5%AF%BC%E5%85%A5.jpg" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/1920x1080/1a100a/fbbf24?text=%E6%8E%A2%E7%B4%A2%E5%B1%95%E8%A7%86%E9%A6%86';"
+                 class="absolute inset-0 w-full h-full object-cover" alt="前情提要背景">
+            
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0d0704]/95 via-[#0d0704]/50 to-[#0d0704]/70 pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-3xl w-full px-6 text-center flex flex-col items-center gap-8">
+                <div class="space-y-3">
+                    <span class="text-sm uppercase tracking-[0.4em] text-amber-400 font-bold font-mono">Museum Night Exploration</span>
+                    <h1 class="text-5xl md:text-7xl font-bold font-calligraphy text-amber-200 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] tracking-widest">
+                        探索展览馆
+                    </h1>
+                    <p class="text-base md:text-lg text-amber-100/90 max-w-2xl mx-auto font-serif-cn leading-relaxed drop-shadow">
+                        深夜的展览馆掩映于阴影之中。传闻馆内藏着绝世秘色瓷制作心法与封存已久的隐秘档案，手持掌心手电筒，解开古物与档案室的谜团……
+                    </p>
+                </div>
+
+                <button onclick="enterGameFromPrologue()" class="group relative px-12 py-4.5 rounded-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-stone-950 font-bold text-lg tracking-widest frosted-panel-gold hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl shadow-amber-500/50 flex items-center gap-3">
+                    <span class="font-calligraphy text-xl">进入游戏</span>
+                    <i class="fa-solid fa-compass text-stone-950 group-hover:rotate-45 transition duration-500 text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- PROLOGUE MATERIAL READING: click the original start button first, then read the supplied image without overlays -->
+        <div id="prologue-material-screen" class="hidden absolute inset-0 z-[60] bg-black">
+            <img src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E5%AF%BC%E5%85%A5.jpg" class="absolute inset-0 bottom-20 w-full h-[calc(100%-5rem)] object-contain bg-black" alt="前情提要剧情素材">
+            <div class="absolute bottom-0 left-0 right-0 h-20 bg-black flex items-center justify-center z-10">
+                <button onclick="startActualGame()" class="px-12 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-lg tracking-widest shadow-2xl border border-amber-300/70">
+                    开始探索
+                </button>
+            </div>
+        </div>
+
+        <!-- HEADER TOOLBAR (TOP FIXED) -->
+        <header id="game-header" class="hidden absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-4 frosted-panel border-b border-amber-500/40 h-20 bg-[#170e08]/90">
+            <div class="flex items-center gap-4">
+                <div class="w-11 h-11 rounded-full bg-amber-500/20 border border-amber-400/80 flex items-center justify-center text-amber-400 shadow-inner">
+                    <i class="fa-solid fa-compass text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-amber-200 font-bold text-2xl tracking-widest font-calligraphy">探索展览馆</h1>
+                    <p id="scene-title" class="text-xs md:text-sm text-amber-400/90 font-serif-cn">场景一：黑夜展馆大厅</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button id="toggle-input-btn" onclick="toggleInputMode()" class="px-4 py-2.5 rounded-xl text-xs md:text-sm bg-[#22150d] hover:bg-[#2d1b11] text-amber-300 border border-amber-500/50 transition flex items-center gap-2 shadow-sm font-semibold">
+                    <i id="input-mode-icon" class="fa-solid fa-hand-pointer text-amber-400"></i>
+                    <span id="input-mode-text">控制器：手势模式</span>
+                </button>
+                <button id="toggle-torch-btn" onclick="toggleFlashlight()" class="px-4 py-2.5 rounded-xl text-xs md:text-sm bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-400/60 transition flex items-center gap-2 shadow-sm font-semibold">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    <span id="torch-status-text">手电筒：开</span>
+                </button>
+                <button onclick="showPrologueScreen()" class="px-4 py-2.5 rounded-xl text-xs md:text-sm bg-[#22150d] hover:bg-[#2d1b11] text-amber-200 border border-amber-700/60 transition flex items-center gap-2 font-semibold">
+                    <i class="fa-solid fa-scroll text-amber-400"></i>
+                    <span>前情提要</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="global-audio-control" class="fixed left-1/2 -translate-x-1/2 top-4 z-[200] hidden bg-black/60 shadow-xl backdrop-blur-xl border border-gray-500/40 rounded-xl px-3 py-2 text-gray-200">
+<button id="music-toggle" class="mr-2">音乐开关</button><input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.5">
+</div>
+<script>
+(function(){
+let c=document.getElementById('global-audio-control');
+window.showGlobalAudio=function(){if(c)c.classList.remove('hidden')};
+document.addEventListener('DOMContentLoaded',showGlobalAudio);
+})();
+</script>
+<main class="relative w-full h-full flex-1 overflow-hidden">
+
+            <!-- SCENE 1: BLACK MUSEUM HALL CANVAS -->
+            <div id="scene1-container" class="absolute inset-0 w-full h-full bg-[#130c08]">
+                <canvas id="scene1-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                <!-- Ancient Painting Prompt in Center -->
+                <div id="painting-hotspot" class="hidden absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center cursor-pointer transition-all duration-300">
+                    <div class="px-6 py-3 rounded-full frosted-panel-gold border-2 border-amber-400 text-amber-100 text-base font-bold flex items-center gap-3 shadow-2xl shadow-amber-500/50 animate-pulse-glow" onclick="openPaintingGame()">
+                        <i class="fa-solid fa-magnifying-glass text-amber-300 text-lg"></i>
+                        <span>查看古画谜题</span>
+                    </div>
+                </div>
+
+                <!-- Scene 1 Hotspots -->
+                <div id="scene1-clues-container" class="absolute inset-0 pointer-events-none z-20">
+                    <div class="absolute left-[16%] top-[58%] pointer-events-auto cursor-pointer group animate-float" onclick="showClue('元青花山水瓶', '此青花瓷瓶线条流畅，瓶身描绘着古人山水游乐图，微光下透着冰润瓷光。')">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400/80 flex items-center justify-center text-amber-300 group-hover:scale-125 transition duration-300 shadow-md">
+                            <i class="fa-solid fa-circle-info text-base"></i>
+                        </div>
+                    </div>
+                    <div class="absolute right-[18%] top-[62%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 1s;" onclick="showClue('饕餮纹青铜尊', '尊盖与器身刻有沉稳严肃的饕餮纹饰，似乎在默默守护着这间古老的展示厅。')">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400/80 flex items-center justify-center text-amber-300 group-hover:scale-125 transition duration-300 shadow-md">
+                            <i class="fa-solid fa-circle-info text-base"></i>
+                        </div>
+                    </div>
+                    <div class="absolute left-[32%] top-[78%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 1.5s;" onclick="showClue('展柜铭牌', '【展览告示】“陶瓷秘境典藏展：若想通往深处的宋代窑址与秘色画廊，须得破解古画上的机关……”')">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400/80 flex items-center justify-center text-amber-300 group-hover:scale-125 transition duration-300 shadow-md">
+                            <i class="fa-solid fa-scroll text-base"></i>
+                        </div>
+                    </div>
+                    <div class="absolute right-[35%] top-[25%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 0.5s;" onclick="showClue('宫廷挂饰结构', '展厅顶部的雕花斗拱带有古建筑独特的榫卯结构，彰显出皇家造办处的不凡气度。')">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400/80 flex items-center justify-center text-amber-300 group-hover:scale-125 transition duration-300 shadow-md">
+                            <i class="fa-solid fa-gem text-base"></i>
+                        </div>
+                    </div>
+                    <div class="absolute left-[48%] top-[75%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 2s;" onclick="showClue('大厅青石铺地', '铺设整齐的青石地板带有些许摩擦痕迹，似乎经常有人在此踱步思考。')">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400/80 flex items-center justify-center text-amber-300 group-hover:scale-125 transition duration-300 shadow-md">
+                            <i class="fa-solid fa-footprints text-base"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Arrows -->
+                <button onclick="switchScene(3)" class="absolute left-6 top-24 z-20 group flex items-center gap-3 p-3.5 rounded-2xl frosted-panel hover:border-amber-400 hover:bg-amber-950/70 transition-all duration-300 shadow-2xl">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center text-stone-950 text-2xl group-hover:scale-110 transition shadow-lg shadow-amber-500/40">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                    <span class="text-sm font-bold text-amber-200 tracking-wider">进入雕像馆</span>
+                </button>
+
+                <button onclick="switchScene(2)" class="absolute right-6 top-24 z-20 group flex items-center gap-3 p-3.5 rounded-2xl frosted-panel hover:border-amber-400 hover:bg-amber-950/70 transition-all duration-300 shadow-2xl">
+                    <span class="text-sm font-bold text-amber-200 tracking-wider">进入画长廊</span>
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center text-stone-950 text-2xl group-hover:scale-110 transition shadow-lg shadow-amber-500/40">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </button>
+            </div>
+
+            <!-- SCENE 2: THREE.JS 360 PANORAMA GALLERY -->
+            <div id="scene2-container" class="hidden absolute inset-0 w-full h-full bg-[#130c08]">
+                <div id="three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+                <button onclick="switchScene(1)" class="absolute left-6 top-24 z-20 group flex items-center gap-3 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 hover:border-amber-400 hover:bg-[#22150d] transition shadow-2xl">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 group-hover:-translate-x-1 transition text-lg">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                    <span class="text-base font-bold text-amber-200">返回黑夜展馆大厅</span>
+                </button>
+
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-4">
+                    <button onclick="openMuralView()" class="px-6 py-3 rounded-xl frosted-panel-gold hover:scale-105 text-amber-100 text-sm font-bold flex items-center gap-2.5 transition shadow-2xl">
+                        <i class="fa-solid fa-palette text-amber-300 text-base"></i>
+                        <span>查看黑暗壁画</span>
+                    </button>
+                    <button onclick="showClue('鬼谷子下山图罐', '元代青花瓷巅峰之作，罐上人物栩栩如生，画工精妙绝伦，胎质细腻。')" class="px-5 py-2.5 rounded-xl frosted-panel hover:bg-amber-900/50 text-amber-200 text-sm flex items-center gap-2 transition font-medium">
+                        <i class="fa-solid fa-eye text-amber-400"></i> 观察青花瓷名品
+                    </button>
+                    <button onclick="showClue('长廊花纹石柱', '两旁柱子雕刻着连绵不绝的莲花纹饰，传闻是古代皇家画廊的标志。')" class="px-5 py-2.5 rounded-xl frosted-panel hover:bg-amber-900/50 text-amber-200 text-sm flex items-center gap-2 transition font-medium">
+                        <i class="fa-solid fa-magnifying-glass text-amber-400"></i> 检查石柱纹理
+                    </button>
+                    <button onclick="showClue('长廊拱顶风铃', '长廊顶部悬挂着古风铜铃，清风吹过时似乎能听到低沉的鸣响。')" class="px-5 py-2.5 rounded-xl frosted-panel hover:bg-amber-900/50 text-amber-200 text-sm flex items-center gap-2 transition font-medium">
+                        <i class="fa-solid fa-bell text-amber-400"></i> 仰望长廊拱顶
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCENE 3: DARK STATUE HALL -->
+            <div id="scene3-container" class="hidden absolute inset-0 w-full h-full bg-[#130c08]">
+                <canvas id="scene3-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                <button onclick="switchScene(1)" class="absolute right-6 top-24 z-20 group flex items-center gap-3 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 hover:border-amber-400 hover:bg-[#22150d] transition shadow-2xl">
+                    <span class="text-base font-bold text-amber-200">返回黑夜展馆大厅</span>
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 group-hover:translate-x-1 transition text-lg">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </button>
+
+                <button onclick="tryEnterArchives()" class="absolute left-6 top-24 z-20 group flex items-center gap-3 p-3.5 rounded-2xl frosted-panel border border-amber-500/50 hover:border-amber-400 hover:bg-amber-950/70 transition-all duration-300 shadow-2xl">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center text-stone-950 text-2xl group-hover:scale-110 transition shadow-lg shadow-amber-500/40">
+                        <i class="fa-solid fa-door-closed"></i>
+                    </div>
+                    <div class="flex flex-col text-left">
+                        <span class="text-base font-bold text-amber-200 tracking-wider">进入档案馆</span>
+                        <span class="text-[11px] text-amber-400/80 font-mono">ARCHIVES ROOM</span>
+                    </div>
+                </button>
+
+                <!-- Statue Face Hotspot Prompt -->
+                <div id="statue-face-hotspot" class="hidden absolute left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center cursor-pointer transition-all duration-300">
+                    <button onclick="inspectStatueFace()" class="px-6 py-3 rounded-full frosted-panel-gold border-2 border-amber-400 text-amber-100 text-sm font-bold flex items-center gap-2.5 shadow-2xl animate-pulse-glow">
+                        <i class="fa-solid fa-hand-holding-hand text-amber-300 text-lg"></i>
+                        <span>观察雕像面部 / 搜寻古物</span>
+                    </button>
+                </div>
+
+                <div id="statue-body-hotspot" class="hidden absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 z-20">
+                    <button onclick="openStatueCloseupView()" class="px-6 py-3 rounded-full frosted-panel-gold border-2 border-amber-400 text-amber-100 text-sm font-bold flex items-center gap-2.5 shadow-2xl animate-pulse-glow">
+                        <i class="fa-solid fa-expand text-amber-300"></i><span>雕像身体可凑近查看</span>
+                    </button>
+                </div>
+
+                <div class="absolute left-1/2 top-[62%] -translate-x-1/2 z-20">
+                    <button onclick="openStatueCloseupView()" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/60 hover:bg-amber-950/70 text-amber-200 text-sm font-bold flex items-center gap-2 transition shadow-xl">
+                        <i class="fa-solid fa-expand text-amber-400"></i>
+                        <span>凑近查看雕像 (360°全景)</span>
+                    </button>
+                </div>
+
+                <div id="scene3-clues-container" class="absolute inset-0 pointer-events-none z-20">
+                    <div class="absolute left-[20%] top-[45%] pointer-events-auto cursor-pointer group animate-float" onclick="showClue('青铜壁灯', '灯台已无油脂，古老的铜锈覆盖在灯盏边缘，显示出岁月流逝。')">
+                        <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                            <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="absolute right-[22%] top-[50%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 1.2s;" onclick="showClue('雕像底座铭文', '“陶巧如神，工精致极”。底座侧面刻有一行微小的字迹，似乎提到了修坯工艺……')">
+                        <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                            <i class="fa-solid fa-quote-left text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="absolute right-[38%] top-[78%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 0.8s;" onclick="showClue('黏土碎片', '地上散落着几块尚未烧制的黏土坯体碎片，切口整齐，显然使用过极其锋利的修坯工具。')">
+                        <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                            <i class="fa-solid fa-puzzle-piece text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCENE 4: ARCHIVES HALL -->
+            <div id="scene4-container" class="hidden absolute inset-0 w-full h-full bg-[#130c08]">
+                <canvas id="scene4-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                <button onclick="switchScene(3)" class="absolute right-6 top-24 z-20 group flex items-center gap-3 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 hover:border-amber-400 hover:bg-[#22150d] transition shadow-2xl">
+                    <span class="text-base font-bold text-amber-200">返回雕像馆</span>
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 group-hover:translate-x-1 transition text-lg">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </button>
+
+                <div id="newspaper-hotspot" class="hidden absolute left-[65%] top-[68%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center cursor-pointer transition-all duration-300">
+                    <button onclick="inspectNewspaper()" class="px-6 py-3 rounded-full frosted-panel-gold border-2 border-amber-400 text-amber-100 text-sm font-bold flex items-center gap-2.5 shadow-2xl animate-pulse-glow">
+                        <i class="fa-solid fa-newspaper text-amber-300 text-lg"></i>
+                        <span>查看桌上的报纸</span>
+                    </button>
+                </div>
+
+                <div id="safe-hotspot" class="hidden absolute left-[35%] top-[42%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center cursor-pointer transition-all duration-300">
+                    <button onclick="openSafePuzzleModal()" class="px-6 py-3 rounded-full frosted-panel-gold border-2 border-amber-400 text-amber-100 text-sm font-bold flex items-center gap-2.5 shadow-2xl animate-pulse-glow">
+                        <i class="fa-solid fa-vault text-amber-300 text-lg"></i>
+                        <span>开启保险柜机关</span>
+                    </button>
+                </div>
+
+                <div id="scene4-clues-container" class="absolute inset-0 pointer-events-none z-20">
+                    <div class="absolute left-[18%] top-[30%] pointer-events-auto cursor-pointer group animate-float" onclick="showClue('机密档案柜', '档案柜上整齐排布着数十卷陈旧的文献卷宗，记录着展览馆历年珍藏瓷器的出处。')">
+                        <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                            <i class="fa-solid fa-folder-closed text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="absolute left-[48%] top-[25%] pointer-events-auto cursor-pointer group animate-float" style="animation-delay: 1s;" onclick="showClue('档案馆西洋挂钟', '挂钟已指针停摆，表盘停留在了不可思议的时间时刻。')">
+                        <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                            <i class="fa-solid fa-clock text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATUE CLOSEUP 360 PANORAMA CONTAINER -->
+            <div id="statue-closeup-container" class="hidden absolute inset-0 z-40 w-full h-full bg-[#130c08]">
+                <div id="statue-three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+                <button onclick="closeStatueCloseupView()" class="absolute left-6 top-24 z-50 group flex items-center gap-3 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 hover:border-amber-400 hover:bg-[#22150d] transition shadow-2xl">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 group-hover:-translate-x-1 transition text-lg">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </div>
+                    <span class="text-base font-bold text-amber-200">返回雕像馆</span>
+                </button>
+
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-50 flex flex-wrap justify-center gap-4">
+                    <button onclick="showClue('雕像衣褶工艺', '凑近观察可发现，雕像衣服褶皱处流畅自然，乃是用专用修坯刀一气呵成修饰出的灵动效果。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 hover:bg-amber-900/50 text-amber-200 text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-shirt text-amber-400"></i> 细看衣褶线条
+                    </button>
+                    <button onclick="showClue('雕像胸前暗槽', '雕像胸口处似乎有一个微小的修坯凹槽，形状与修坯刀刀刃完美吻合。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 hover:bg-amber-900/50 text-amber-200 text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-key text-amber-400"></i> 观察胸前暗槽
+                    </button>
+                    <button onclick="showClue('雕像发簪饰物', '发髻上雕有精致的云纹发簪，发簪末端略微翘起。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 hover:bg-amber-900/50 text-amber-200 text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-spa text-amber-400"></i> 观察头部发簪
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCENE 5: PAINTING WORLD 360 PANORAMA -->
+            <div id="scene5-container" class="hidden absolute inset-0 z-40 w-full h-full bg-[#130c08]">
+                <div id="painting-world-three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                <div class="absolute inset-x-0 top-24 z-50 flex justify-center pointer-events-none">
+                    <div id="painting-world-return-locked-message" class="px-6 py-3 rounded-2xl frosted-panel text-amber-100 text-base font-bold border border-amber-500/50">和展览馆的古画一模一样？但是没有办法回去了。</div>
+                </div>
+                <div class="absolute inset-x-0 top-40 z-50 flex justify-center pointer-events-none">
+                    <div id="painting-world-mist-message" class="hidden px-6 py-3 rounded-2xl frosted-panel text-amber-50 text-base font-bold border border-white/20 shadow-2xl">雾很大，需要东西驱散。</div>
+                </div>
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-50">
+                    <button onclick="openArtisanCloseup()" class="px-7 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold flex items-center gap-2 shadow-2xl hover:scale-105 transition">
+                        <i class="fa-solid fa-person-walking text-amber-300"></i> 远处似乎有人，凑近看看
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCENE 6: ARTISAN CLOSEUP -->
+            <div id="scene6-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <img src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%88%B6%E4%BD%9C%E9%99%B6%E7%93%B7%E7%9A%84%E8%80%81%E4%BA%BA.jpg" class="absolute inset-0 w-full h-full object-contain bg-black" alt="制作陶瓷的老人">
+                <button onclick="switchScene(5)" class="absolute left-6 top-24 z-50 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 text-amber-200 font-bold">返回画中世界</button>
+                <button onclick="talkToArtisan()" class="absolute left-1/2 bottom-28 -translate-x-1/2 z-50 px-8 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold shadow-2xl hover:scale-105 transition">与老工匠交谈</button>
+            </div>
+
+            <!-- SCENE 7: KILN ROOM -->
+            <div id="scene7-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <img src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E8%80%81%E4%BA%BA%E7%9C%8B%E9%99%B6%E7%93%B7.jpg" class="absolute inset-0 w-full h-full object-contain bg-black" alt="窑房">
+                <button onclick="switchScene(6)" class="absolute left-6 top-24 z-50 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 text-amber-200 font-bold">返回老工匠处</button>
+                <button onclick="talkToKilnArtisan()" class="absolute left-[55%] top-[44%] z-50 px-5 py-3 rounded-xl frosted-panel border border-amber-400/60 text-amber-200 font-bold hover:scale-105 transition">与老人交谈</button>
+                <button onclick="openCeramicShelfGame()" class="absolute right-[13%] top-[48%] z-50 px-5 py-3 rounded-xl frosted-panel border border-amber-400/60 text-amber-200 font-bold hover:scale-105 transition">查看陶瓷架子</button>
+                <button onclick="openInnerKiln()" class="absolute left-[18%] top-[50%] z-50 px-5 py-3 rounded-xl frosted-panel border border-amber-400/60 text-amber-200 font-bold hover:scale-105 transition">内部窑房</button>
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-50 px-7 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold">窑房</div>
+            </div>
+
+            <!-- SCENE 8: INNER KILN 360 PANORAMA -->
+            <div id="scene8-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <div id="inner-kiln-three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                <button onclick="switchScene(7)" class="absolute left-6 top-24 z-50 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 text-amber-200 font-bold">返回窑房</button>
+                <button onclick="useNewspaperInInnerKiln()" class="absolute left-[28%] top-[62%] z-50 px-5 py-3 rounded-xl frosted-panel border border-amber-400/60 text-amber-200 font-bold hover:scale-105 transition">使用报纸</button>
+                <button onclick="talkToInnerKilnOldMan()" class="absolute right-[24%] top-[50%] z-50 px-5 py-3 rounded-xl frosted-panel border border-amber-400/60 text-amber-200 font-bold hover:scale-105 transition">查看老人</button>
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-50 px-7 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold">内部窑房 · 360°全景</div>
+            </div>
+
+            <!-- SCENE 9: CERAMIC SHELF PUZZLE -->
+            <div id="scene9-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image:url('https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%99%B6%E7%93%B7%E6%9E%B6%E5%AD%90.jpg');"></div>
+                <div class="absolute inset-0 bg-black/20"></div>
+                <button onclick="switchScene(7)" class="absolute left-6 top-24 z-50 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 text-amber-200 font-bold">返回窑房</button>
+                <div id="ceramic-puzzle-board" class="absolute inset-0 z-40 pointer-events-auto"></div>
+                <div class="absolute top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl frosted-panel text-amber-100 font-bold">将散落的陶瓷拖到对应的灰影位置</div><div class="absolute bottom-8 right-8 z-50 flex gap-3"><button onclick="skipCeramicShelf()" class="px-6 py-3 rounded-xl frosted-panel text-amber-200 font-bold">跳过摆放并获得钥匙</button><button onclick="skipCeramicShelfNoKey()" class="px-6 py-3 rounded-xl frosted-panel border border-white/20 text-gray-200 font-bold hover:bg-white/10">跳过（不获得钥匙）</button></div>
+            </div>
+
+            <!-- SCENE 10: BRIGHT MUSEUM HALL 360 PANORAMA -->
+            <div id="scene10-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <div id="bright-museum-three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                <div class="absolute inset-x-0 top-24 z-50 flex justify-center pointer-events-none">
+                    <div class="px-6 py-3 rounded-2xl frosted-panel text-amber-100 text-base font-bold border border-amber-500/50">博物馆里陶瓷的作者之前不是某位大师吗，怎么变成了一个没有从来都听说过的名字</div>
+                </div>
+                <div class="absolute bottom-28 left-1/2 -translate-x-1/2 z-50 flex gap-4">
+                    <button onclick="switchScene(13)" class="px-7 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold shadow-2xl hover:scale-105 transition">向左：明亮巨大陶瓷雕像展馆</button><button onclick="switchScene(11)" class="px-7 py-3 rounded-xl frosted-panel-gold text-amber-100 font-bold shadow-2xl hover:scale-105 transition">向右：明亮壁画长廊</button>
+                </div>
+                <div class="absolute left-8 bottom-28 z-50">
+                    <button onclick="switchScene(7)" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 text-amber-200 text-sm">返回剧情场景</button>
+                </div>
+            </div>
+
+            <!-- SCENE 11: BRIGHT MURAL CORRIDOR 360 PANORAMA -->
+            <div id="scene11-container" class="hidden absolute inset-0 z-40 w-full h-full bg-black">
+                <div id="bright-mural-three-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                <div class="absolute inset-x-0 top-24 z-50 flex justify-center pointer-events-none">
+                    <div class="max-w-2xl px-6 py-4 rounded-2xl frosted-panel text-amber-100 text-sm leading-relaxed border border-amber-500/50 text-center">古画似乎已经恢复正常了。<br>壁画中的山水层次清晰，釉色与纹样都恢复了原本的秩序。<br>旁侧展柜中的陶瓷为馆藏常规展品，可观察器形、釉色、纹饰与烧制工艺。</div>
+                </div>
+                <div class="absolute left-[18%] top-[46%] z-50">
+                    <button onclick="showClue('古画','古画似乎恢复正常了，画面中的人物、山水与器物都重新回到了原本的位置。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 text-amber-200">查看古画</button>
+                </div>
+                <div class="absolute right-[22%] top-[54%] z-50">
+                    <button onclick="showClue('陶瓷展柜','这件陶瓷以器形与釉色为主要观赏特征，表面纹饰体现了传统陶瓷工艺的审美。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 text-amber-200">查看陶瓷</button>
+                </div>
+                <div class="absolute right-[38%] top-[35%] z-50">
+                    <button onclick="showClue('釉色与烧制','釉面在光线下呈现柔和光泽，烧制温度、窑内气氛等都会影响最终的色泽与质感。')" class="px-5 py-2.5 rounded-xl frosted-panel border border-amber-400/50 text-amber-200">查看釉色</button>
+                </div>
+                <button onclick="switchScene(10)" class="absolute left-6 top-24 z-50 px-5 py-3 rounded-2xl frosted-panel border border-amber-500/50 text-amber-200 font-bold">返回明亮博物馆大厅</button>
+            </div>
+
+        </main>
+
+        <div id="scene12" class="scene hidden relative w-full h-full overflow-hidden">
+            <div id="bright-statue-panorama" class="absolute inset-0"></div>
+            <div class="absolute top-24 left-6 z-50 px-5 py-3 frosted-panel text-amber-200 rounded-xl">明亮巨大陶瓷雕像展馆</div>
+            <div class="absolute left-[22%] top-[45%] z-50"><button onclick="showClue('修复后的雕像','雕像的裂痕似乎被修复了')" class="px-5 py-3 frosted-panel text-amber-200">查看雕像</button></div>
+            <div class="absolute right-[25%] top-[35%] z-50"><button onclick="showClue('作者疑点','这尊著名瓷像的作者之前不是某位大师吗，怎么变成了一个没有从来都听说过的名字')" class="px-5 py-3 frosted-panel text-amber-200">查看铭牌</button></div>
+            <div class="absolute right-[15%] bottom-[30%] z-50"><button onclick="showClue('展柜线索','展柜中的陶瓷仍保持完整，但作者信息似乎发生了变化。')" class="px-5 py-3 frosted-panel text-amber-200">查看展柜</button></div>
+            <div class="absolute left-[45%] top-[28%] z-50"><button onclick="showClue('陶瓷釉色','这件瓷器表面的釉色依旧保持细腻光泽，能看出传统烧制工艺留下的痕迹。')" class="px-5 py-3 frosted-panel text-amber-200">查看釉色</button></div>
+            <div class="absolute right-[42%] top-[55%] z-50"><button onclick="showClue('展馆记录','展馆资料显示，这件作品曾经经历过修复，但部分历史记录似乎出现了无法解释的变化。')" class="px-5 py-3 frosted-panel text-amber-200">查看记录</button></div>
+            <div class="absolute left-[12%] top-[65%] z-50"><button onclick="showClue('展厅环境','明亮展馆恢复了原本的秩序，陶瓷展品在柔和灯光下展示着完整的工艺细节。')" class="px-5 py-3 frosted-panel text-amber-200">查看展厅</button></div>
+            <div class="absolute right-[35%] top-[70%] z-50"><button onclick="showClue('陶瓷纹样','器物表面的纹样仍保留传统装饰风格，可以观察到细腻的刻画痕迹。')" class="px-5 py-3 frosted-panel text-amber-200">查看纹样</button></div>
+            <div class="absolute left-[45%] top-[25%] z-50"><button onclick="showClue('展柜记录','这件陶瓷作品的展览记录出现了细微变化，部分信息似乎被重新书写。')" class="px-5 py-3 frosted-panel text-amber-200">查看展柜记录</button></div>
+            <button onclick="switchScene(10)" class="absolute bottom-8 left-6 z-50 px-5 py-3 frosted-panel text-amber-200 rounded-xl">返回明亮展览大厅</button>
+        </div>
+
+
+        <div id="scene13" class="scene hidden absolute inset-0 z-40 w-full h-full overflow-hidden bg-black">
+            <div id="bright-statue-new-panorama" class="absolute inset-0"></div>
+            <div class="absolute top-24 left-6 z-50 px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 shadow-xl">
+                <div class="font-bold tracking-widest">明亮巨大陶瓷雕像展馆</div>
+                <div class="text-[10px] text-amber-300/70 mt-1 font-mono">BRIGHT CERAMIC SCULPTURE HALL · 360°</div>
+            </div>
+            <div class="absolute top-24 right-6 z-50 px-4 py-2.5 rounded-xl bg-black/35 backdrop-blur-md border border-white/10 text-xs text-white/80">
+                拖动鼠标旋转视角 · 点击展品查看说明
+            </div>
+
+            <div class="absolute left-[18%] top-[45%] z-50">
+                <button onclick="showClue('修复后的雕像','雕像的裂痕似乎被修复了。修复后的表面尽量保留原有肌理，让修复痕迹与作品本身形成清晰但克制的对照。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">查看雕像</button>
+            </div>
+            <div class="absolute right-[22%] top-[35%] z-50">
+                <button onclick="showClue('作者疑点','这尊著名瓷像的作者之前不是某位大师吗，怎么变成了一个没有从来都听说过的名字？这块展签的信息与原有馆藏记录出现了明显错位。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">查看铭牌</button>
+            </div>
+            <div class="absolute left-[45%] top-[28%] z-50">
+                <button onclick="showClue('真正的作者','重新核对馆藏档案、旧展签与作品记录后，作者信息恢复为原始署名，作品重新对应真正的创作者。这里强调的是馆藏信息的校正，而不是重新创作作品。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">查看作者资料</button>
+            </div>
+            <div class="absolute right-[15%] bottom-[30%] z-50">
+                <button onclick="showClue('陶瓷工艺','从器形、釉色到局部刻饰，都能看出作者对陶瓷材料与烧制工艺的长期实践。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">解读作品</button>
+            </div>
+            <div class="absolute left-[12%] bottom-[28%] z-50">
+                <button onclick="showClue('历史记录','展签恢复了作品真实来源，原本被替换的作者信息重新出现，馆藏记录也恢复了连续性。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">查看记录</button>
+            </div>
+            <div class="absolute right-[42%] top-[56%] z-50">
+                <button onclick="showClue('釉色与光泽','明亮展厅的光线让釉面细节更加清晰：不同区域的光泽变化来自釉层厚薄与烧成状态的差异。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">查看釉色</button>
+            </div>
+            <div class="absolute right-[34%] top-[72%] z-50">
+                <button onclick="showClue('作品解读','这件作品以人体比例、衣褶节奏和整体轮廓构成视觉重点，陶瓷材质让雕塑具有独特的光泽与重量感。')" class="px-5 py-3 frosted-panel text-amber-100 rounded-xl border border-white/15 hover:bg-white/10 transition">作品解读</button>
+            </div>
+
+            <div class="absolute top-24 right-6 z-[80]">
+                <button onclick="switchScene(10)" class="px-7 py-4 rounded-2xl frosted-panel text-amber-100 border-2 border-amber-400/60 font-bold text-base shadow-2xl hover:bg-amber-950/60 hover:scale-105 transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>返回明亮博物馆大厅
+                </button>
+            </div>
+        </div>
+
+        <!-- STORY VIDEO -->
+        <div id="story-video-modal" class="hidden fixed inset-0 z-[100] bg-black flex items-center justify-center">
+            <video id="artisan-story-video" class="w-full h-full object-contain" playsinline preload="metadata" src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E8%80%81%E4%BA%BA%E5%AF%B9%E8%AF%9D%E5%89%A7%E6%83%85.mp4"></video>
+            <button onclick="closeStoryVideo()" class="absolute top-6 right-6 z-20 w-11 h-11 rounded-full bg-black/60 border border-amber-400/60 text-amber-200">×</button><button onclick="showStoryMiddle()" class="absolute bottom-8 right-8 z-20 px-5 py-3 rounded-xl bg-black/60 border border-amber-400/60 text-amber-200">跳过剧情</button>
+        </div>
+
+        <!-- STORY MIDDLE IMAGE -->
+        <div id="story-middle-screen" class="hidden fixed inset-0 z-[101] bg-black">
+            <img src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E4%B8%AD%E9%97%B4.jpg" class="absolute inset-0 w-full h-full object-cover" alt="剧情中间画面">
+            <button onclick="openReturnMuseumVideo()" class="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 px-9 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold tracking-widest border border-amber-300/70 shadow-2xl">回到现实博物馆</button>
+        </div>
+
+        <!-- RETURN TO MUSEUM VIDEO -->
+        <div id="return-video-modal" class="hidden fixed inset-0 z-[102] bg-black flex items-center justify-center">
+            <video id="return-museum-video" class="w-full h-full object-contain" playsinline preload="auto" src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%9B%9E%E5%88%B0%E5%8D%9A%E7%89%A9%E9%A6%86%E5%89%A7%E6%83%85.mp4"></video>
+            <button onclick="finishReturnMuseumVideo()" class="absolute bottom-8 right-8 z-20 px-5 py-3 rounded-xl bg-black/60 border border-amber-400/60 text-amber-200">跳过剧情</button>
+        </div>
+
+        <!-- INVENTORY BAR (BOTTOM TOOLBAR) -->
+        <footer id="inventory-bar" class="relative z-40 h-24 frosted-panel border-t border-amber-500/40 flex items-center justify-between px-8 bg-[#170e08]/95">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-toolbox text-amber-400 text-2xl"></i>
+                <div class="flex flex-col">
+                    <span class="text-base text-amber-200 font-bold tracking-widest font-calligraphy">道具储物格</span>
+                    <span class="text-[10px] text-amber-400/80 font-mono">INVENTORY SYSTEM</span>
+                </div>
+            </div>
+
+            <!-- Inventory Grid Slots -->
+            <div id="inventory-grid" class="flex items-center gap-4">
+                <!-- Rendered dynamically via JavaScript -->
+            </div>
+
+            <div class="text-xs md:text-sm text-amber-200/80 flex items-center gap-2 font-medium">
+                <i class="fa-solid fa-hand-pointer text-amber-400"></i>
+                <span>点击道具图标查看详情注释</span>
+            </div>
+        </footer>
+
+        <!-- WEBCAM / MEDIAPIPE GESTURE PREVIEW WINDOW (WITH COLLAPSE OPTION) -->
+        <div id="webcam-preview-card" class="absolute bottom-28 right-6 z-40 w-60 frosted-panel rounded-2xl p-3 shadow-2xl backdrop-blur-xl transition-all duration-300 border border-amber-500/50">
+            <div class="flex items-center justify-between px-2 py-1 mb-1 border-b border-amber-900/40">
+                <span class="text-xs text-amber-300 font-bold flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    手势追踪预览
+                </span>
+                <div class="flex items-center gap-2">
+                    <span id="gesture-indicator" class="text-[10px] text-amber-300/60 font-mono">隐私保护</span>
+                    <button onclick="toggleWebcamCardCollapse()" title="折叠/展开手势窗口" class="text-amber-400 hover:text-amber-200 transition px-1 py-0.5 rounded focus:outline-none">
+                        <i id="webcam-collapse-icon" class="fa-solid fa-chevron-down text-xs"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="webcam-card-body" class="transition-all duration-300">
+                <div class="relative w-full h-32 rounded-xl overflow-hidden bg-[#0d0704] flex items-center justify-center border border-amber-900/30">
+                    <video id="webcam-video" class="hidden" playsinline></video>
+                    <canvas id="preview-canvas" class="w-full h-full object-cover"></canvas>
+                </div>
+                
+                <div class="mt-2 flex items-center justify-between text-xs text-amber-300/90 px-1 font-mono">
+                    <span id="flashlight-pos-text">光圈: (0, 0)</span>
+                    <span id="flashlight-size-text">半径: 150px</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANCIENT PAINTING SUB-GAME MODAL -->
+        <div id="painting-game-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
+            <div class="max-w-4xl w-full frosted-panel rounded-3xl p-7 border-2 border-amber-500/70 flex flex-col gap-5 relative shadow-2xl">
+                
+                <button onclick="closePaintingGame()" class="absolute top-5 right-5 w-11 h-11 rounded-full bg-[#2a1a10] hover:bg-[#382315] text-amber-300 border border-amber-500/50 flex items-center justify-center z-30 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-3xl font-bold font-calligraphy text-amber-300">大厅古画谜题：五光联珠</h3>
+                        <p class="text-sm text-amber-400/90 mt-1">观察瓶身上5个光芒闪烁的顺序，并依次点击对应的瓶身光芒！</p>
+                    </div>
+                    <button id="start-seq-btn" onclick="startSequenceGame()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-play"></i> 播放光芒闪烁顺序
+                    </button>
+                </div>
+
+                <div class="relative w-full h-[460px] rounded-2xl overflow-hidden border border-amber-500/50 bg-[#130c08] flex items-center justify-center">
+                    <img id="subgame-bg-img" src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%A4%A7%E5%8E%85%E7%94%BB.jpg" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/1000x600/2d1b00/fbbf24?text=%E5%8F%A4%E7%94%BB%E4%BA%A4%E4%BA%92%E5%A0%B4%E6%99%AF';"
+                         class="w-full h-full object-contain" alt="古画背景">
+
+                    <div id="orb-0" onclick="handleOrbClick(0)" class="orb-spot absolute left-[22%] top-[38%] w-13 h-13 rounded-full border-2 border-amber-300 bg-amber-400/40 cursor-pointer flex items-center justify-center text-amber-100 font-bold text-base hover:scale-125 transition shadow-lg shadow-amber-500/60">1</div>
+                    <div id="orb-1" onclick="handleOrbClick(1)" class="orb-spot absolute left-[38%] top-[52%] w-13 h-13 rounded-full border-2 border-amber-300 bg-amber-400/40 cursor-pointer flex items-center justify-center text-amber-100 font-bold text-base hover:scale-125 transition shadow-lg shadow-amber-500/60">2</div>
+                    <div id="orb-2" onclick="handleOrbClick(2)" class="orb-spot absolute left-[52%] top-[32%] w-13 h-13 rounded-full border-2 border-amber-300 bg-amber-400/40 cursor-pointer flex items-center justify-center text-amber-100 font-bold text-base hover:scale-125 transition shadow-lg shadow-amber-500/60">3</div>
+                    <div id="orb-3" onclick="handleOrbClick(3)" class="orb-spot absolute left-[68%] top-[48%] w-13 h-13 rounded-full border-2 border-amber-300 bg-amber-400/40 cursor-pointer flex items-center justify-center text-amber-100 font-bold text-base hover:scale-125 transition shadow-lg shadow-amber-500/60">4</div>
+                    <div id="orb-4" onclick="handleOrbClick(4)" class="orb-spot absolute left-[82%] top-[36%] w-13 h-13 rounded-full border-2 border-amber-300 bg-amber-400/40 cursor-pointer flex items-center justify-center text-amber-100 font-bold text-base hover:scale-125 transition shadow-lg shadow-amber-500/60">5</div>
+                </div>
+
+                <div id="puzzle-status" class="text-center text-sm text-amber-300 font-bold h-6">
+                    点击"播放光芒闪烁顺序"开始挑战
+                </div>
+            </div>
+        </div>
+
+        <!-- MURAL MODAL -->
+        <div id="mural-modal" class="hidden absolute top-20 left-0 right-0 bottom-24 z-30 flex items-center justify-center bg-black/90 p-4">
+            <div class="relative w-full h-full frosted-panel rounded-3xl overflow-hidden flex flex-col border-2 border-amber-500/60 shadow-2xl">
+                
+                <header class="flex items-center justify-between px-8 py-3.5 border-b border-amber-500/40 bg-[#1c110b]">
+                    <div>
+                        <h3 class="text-2xl font-bold font-calligraphy text-amber-300">长廊黑暗壁画：夜探法门</h3>
+                        <p class="text-xs text-amber-400/90">移动手电筒探索壁画隐秘细节与窑炉铭文</p>
+                    </div>
+                    <button onclick="closeMuralView()" aria-label="返回画长廊" title="返回画长廊" class="min-w-[150px] h-14 px-5 rounded-2xl bg-[#2a1a10] hover:bg-[#382315] text-amber-200 border-2 border-amber-500/60 flex items-center justify-center gap-3 transition text-base font-bold shadow-xl">
+                        <i class="fa-solid fa-arrow-left text-lg"></i>
+                        <span>返回画长廊</span>
+                    </button>
+                </header>
+
+                <div id="mural-canvas-container" class="relative flex-1 w-full h-full bg-[#130c08] overflow-hidden">
+                    <canvas id="mural-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                    <div class="absolute left-6 top-5 z-30 pointer-events-none max-w-[500px]">
+                        <div class="px-5 py-4 rounded-2xl bg-black/62 border border-amber-400/45 shadow-2xl backdrop-blur-md">
+                            <p class="text-lg md:text-xl font-bold leading-relaxed tracking-wide text-amber-100 drop-shadow-[0_2px_8px_rgba(0,0,0,.9)]">这幅画据说是展览馆大师的个人藏品，但是出自谁手他却从未提及，里面的画作栩栩如生，似乎别有洞天</p>
+                        </div>
+                    </div>
+
+                    <div class="absolute inset-0 pointer-events-none z-20">
+                        <!-- 壁画缺角交互点 -->
+                        <div data-mural-missing class="hidden absolute right-[18%] top-[30%] pointer-events-auto cursor-pointer group" onclick="inspectMuralMissingCorner()">
+                            <div class="w-10 h-10 rounded-full bg-amber-500/30 border-2 border-amber-400 flex items-center justify-center text-amber-300 group-hover:scale-125 transition shadow-lg animate-pulse">
+                                <i class="fa-solid fa-puzzle-piece text-base"></i>
+                            </div>
+                        </div>
+
+                        <div class="absolute left-[25%] top-[40%] pointer-events-auto cursor-pointer group" onclick="showClue('拉坯图刻', '壁画描绘着宋代匠人拉坯的生动场景，双手力道沉稳，轮盘飞转。')">
+                            <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                                <i class="fa-solid fa-hands text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="absolute right-[30%] top-[55%] pointer-events-auto cursor-pointer group" onclick="showClue('神秘金文', '“千峰翠色，秘色独尊”。壁画侧边的金文记录着烧制秘色瓷的关键釉料比例。')">
+                            <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/70 flex items-center justify-center text-amber-300 group-hover:scale-125 transition">
+                                <i class="fa-solid fa-feather text-sm"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEWSPAPER INSPECTION MODAL -->
+        <div id="newspaper-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
+            <div class="max-w-3xl w-full frosted-panel rounded-3xl p-6 border-2 border-amber-500/70 flex flex-col gap-5 relative shadow-2xl">
+                <button onclick="closeNewspaperModal()" class="absolute top-5 right-5 w-10 h-10 rounded-full bg-[#2a1a10] hover:bg-[#382315] text-amber-300 border border-amber-500/50 flex items-center justify-center z-30 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <h3 class="text-2xl font-bold font-calligraphy text-amber-300 border-b border-amber-500/30 pb-2">档案馆旧报纸</h3>
+
+                <div class="w-full h-80 rounded-2xl overflow-hidden bg-[#130c08] border border-amber-500/40 flex items-center justify-center p-2 shadow-inner">
+                    <img id="newspaper-img" src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%96%B0%E9%97%BB.jpg" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/800x500/1e130c/fbbf24?text=%E6%96%B0%E9%97%BB%E6%8A%A5%E9%81%93%E7%89%B9%E5%86%99';"
+                         class="max-w-full max-h-full object-contain rounded-xl" alt="新闻报道">
+                </div>
+
+                <div class="w-full frosted-panel-gold p-5 rounded-2xl border border-amber-400/60 shadow-xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-amber-500/30 border border-amber-400/80 flex items-center justify-center text-amber-300 shrink-0 text-xl shadow-inner">
+                        <i class="fa-solid fa-user-ninja"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-amber-300 font-bold block mb-1">【主角内心独白】</span>
+                        <p class="text-base text-amber-100 font-serif-cn leading-relaxed">
+                            “上面的报道说的居然是展览馆的这位大师？”
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAFE DIGIT PUZZLE MODAL -->
+        <div id="safe-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
+            <div class="max-w-3xl w-full frosted-panel rounded-3xl p-6 border-2 border-amber-500/70 flex flex-col gap-5 relative shadow-2xl">
+                <button onclick="closeSafeModal()" class="absolute top-5 right-5 w-10 h-10 rounded-full bg-[#2a1a10] hover:bg-[#382315] text-amber-300 border border-amber-500/50 flex items-center justify-center z-30 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <h3 class="text-2xl font-bold font-calligraphy text-amber-300 border-b border-amber-500/30 pb-2">档案馆保险柜密码锁</h3>
+
+                <div class="relative w-full h-80 rounded-2xl overflow-hidden bg-[#130c08] border border-amber-500/40 flex items-center justify-center p-2 shadow-inner">
+                    <img id="safe-status-img" src="https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E4%BF%9D%E9%99%A9%E6%9F%9C%E5%85%B3%E9%97%AD.jpg" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/800x500/130c08/fbbf24?text=%E4%BF%9D%E9%99%A9%E6%9F%9C%E8%A7%86%E5%9B%BE';"
+                         class="max-w-full max-h-full object-contain rounded-xl" alt="保险柜状态">
+                </div>
+
+                <div id="safe-input-controls" class="flex flex-col items-center gap-4 bg-[#1c110b] p-4 rounded-2xl border border-amber-500/30">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-bold text-amber-300">请输入4位数值密码：</span>
+                        <input id="safe-passcode-input" type="text" maxlength="4" placeholder="----" class="w-36 text-center text-2xl font-mono tracking-widest bg-[#0d0704] text-amber-300 border-2 border-amber-500/60 rounded-xl py-1.5 focus:outline-none focus:border-amber-400">
+                        <button onclick="submitSafePasscode()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm shadow-md transition">
+                            确认解锁
+                        </button>
+                    </div>
+                    <span id="safe-feedback-text" class="text-xs text-amber-400/90 font-bold h-4"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ITEM DETAIL MODAL -->
+        <div id="item-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
+            <div class="max-w-md w-full frosted-panel-gold rounded-3xl p-8 flex flex-col items-center gap-6 text-center relative shadow-2xl border-2 border-amber-400/70">
+                <button onclick="closeItemModal()" class="absolute top-5 right-5 w-10 h-10 rounded-full bg-[#1c110b] hover:bg-[#2d1b11] text-amber-200 border border-amber-500/40 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <div class="w-40 h-40 rounded-2xl bg-[#0d0704] border-2 border-amber-500/50 p-4 flex items-center justify-center shadow-2xl relative group">
+                    <img id="modal-item-img" src="" class="max-w-full max-h-full object-contain filter drop-shadow-[0_8px_16px_rgba(251,191,36,0.3)] transition duration-300 group-hover:scale-110" alt="道具">
+                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-t from-amber-500/10 to-transparent pointer-events-none"></div>
+                </div>
+
+                <div>
+                    <h3 id="modal-item-title" class="text-3xl font-bold font-calligraphy text-amber-300">道具名称</h3>
+                    <span id="modal-item-type" class="text-xs text-amber-400 px-3.5 py-1 rounded-full bg-amber-950/80 border border-amber-700/50 inline-block mt-2 font-medium">关键探索古物</span>
+                </div>
+
+                <div class="w-full bg-[#130c08]/90 p-5 rounded-2xl border border-amber-500/40 text-left shadow-inner">
+                    <span class="text-xs text-amber-400 block font-bold mb-1.5">【道具注释】</span>
+                    <p id="modal-item-desc" class="text-sm text-amber-100/90 leading-relaxed font-serif-cn">
+                        道具详细注释...
+                    </p>
+                </div>
+
+                <button onclick="closeItemModal()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-sm tracking-widest transition shadow-lg">
+                    关闭详情
+                </button>
+            </div>
+        </div>
+
+        <!-- CONVERSATIONAL DIALOGUE MODAL -->
+        <div id="conversation-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center bg-black/20 p-6 md:p-10 pointer-events-auto">
+            <div class="max-w-3xl w-full rounded-3xl border border-amber-500/50 bg-[#170e08]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-amber-500/30 flex items-center gap-3">
+                    <div id="conversation-speaker" class="text-lg font-bold text-amber-300 font-calligraphy">老工匠</div>
+                </div>
+                <button onclick="advanceConversation()" class="w-full text-left px-7 py-7 min-h-[130px] hover:bg-amber-950/20 transition">
+                    <div id="conversation-text" class="text-lg md:text-xl leading-relaxed text-amber-100 font-serif-cn"></div>
+                    <div class="mt-4 text-xs text-amber-400/60">点击对话框继续</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- CLUE DIALOG MODAL -->
+        <div id="clue-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
+            <div class="max-w-lg w-full frosted-panel rounded-3xl p-7 border-2 border-amber-500/60 flex flex-col gap-5 relative shadow-2xl">
+                <div class="flex items-center gap-3 border-b border-amber-500/40 pb-3">
+                    <i class="fa-solid fa-feather-pointed text-amber-400 text-2xl"></i>
+                    <h4 id="clue-title" class="text-2xl font-bold font-calligraphy text-amber-300">线索调查</h4>
+                </div>
+                <p id="clue-desc" class="text-base text-amber-100/95 leading-relaxed py-2 font-serif-cn">
+                    线索内容...
+                </p>
+                <div class="flex justify-end items-center gap-3">
+                    <button id="clue-action-btn" onclick="handleClueAction()" class="hidden px-7 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 text-sm font-bold transition shadow-md"></button>
+                    <button onclick="closeClueModal()" class="px-7 py-3 rounded-xl bg-[#2a1a10] hover:bg-[#382315] text-amber-300 border border-amber-500/50 text-sm font-bold transition shadow-md">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ASSETS RAW LINKS
+        const ASSETS = {
+            intro: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E5%AF%BC%E5%85%A5.jpg",
+            scene1Dark: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%BB%91%E5%A4%9C%E5%B1%95%E9%A6%861.jpg",
+            scene1Video: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%BB%91%E5%A4%9C%E5%8D%9A%E7%89%A9%E9%A6%86%E4%BA%A4%E4%BA%92.mp4",
+            hallPainting: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%A4%A7%E5%8E%85%E7%94%BB.jpg",
+            keyItem: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%92%A5%E5%8C%99%E6%94%B9.png",
+            scene2Corridor: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E7%94%BB%E9%95%BF%E5%BB%8A.jpg",
+            muralDark: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%BB%91%E6%9A%97%E5%A3%81%E7%94%BB.jpg",
+            muralVideo: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%A3%81%E7%94%BB%E4%BA%A4%E4%BA%92.mp4",
+            scene3StatueDark: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%BB%91%E6%9A%97%E9%9B%95%E5%83%8F%E9%A6%86.jpg",
+            scene3StatueVideo: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%9B%95%E5%83%8F%E4%BA%A4%E4%BA%92%E5%89%AA%E8%BE%91.mp4",
+            trimmingToolItem: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E4%BF%AE%E5%9D%AF%E5%88%80.png",
+            statueCloseup: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%9B%95%E5%83%8F%E9%A6%A0%E8%BF%91.jpg",
+            scene4ArchivesDark: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%A1%A3%E6%A1%88%E9%A6%86.jpg",
+            scene4ArchivesSpotlight: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%A1%A3%E6%A1%88%E9%A6%86%E4%BA%A4%E4%BA%92.jpg",
+            newspaperImg: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%96%B0%E9%97%BB.jpg",
+            newspaperItem: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%8A%A5%E7%BA%B8%E5%B0%8F.png",
+            safeClosedImg: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E4%BF%9D%E9%99%A9%E6%9F%9C%E5%85%B3%E9%97%AD.jpg",
+            safeOpenedImg: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E4%BF%9D%E9%99%A9%E6%9F%9C%E6%89%93%E5%BC%80.jpg",
+            muralItem: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%A3%81%E7%94%BB%E9%81%93%E5%85%B7.png",
+            prologueImage: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E5%AF%BC%E5%85%A5.jpg",
+            statueCloseup: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%9B%95%E5%83%8F%E9%9D%A0%E8%BF%91.jpg",
+            paintingWorld: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%8F%A4%E7%94%BB%E4%B8%96%E7%95%8C1.jpg",
+            artisanCloseup: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%88%B6%E4%BD%9C%E9%99%B6%E7%93%B7%E7%9A%84%E8%80%81%E4%BA%BA.jpg",
+            kilnScene: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E8%80%81%E4%BA%BA%E7%9C%8B%E9%99%B6%E7%93%B7.jpg",
+            ceramicShelf: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%99%B6%E7%93%B7%E6%9E%B6%E5%AD%90.jpg",
+            innerKiln: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E7%AA%91%E7%82%89%E9%87%8C%E7%9A%84%E9%9B%95%E5%83%8F.jpg",
+            innerKilnKey: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E7%AA%91%E6%88%BF%E9%92%A5%E5%8C%99%E6%94%B9.png",
+            artisanStoryVideo: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E8%80%81%E4%BA%BA%E5%AF%B9%E8%AF%9D%E5%89%A7%E6%83%85.mp4",
+            storyMiddleImage: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E5%89%A7%E6%83%85%E4%B8%AD%E9%97%B4.jpg",
+            returnMuseumVideo: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E5%9B%9E%E5%88%B0%E5%8D%9A%E7%89%A9%E9%A6%86%E5%89%A7%E6%83%85.mp4",
+            brightMuseumHall: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E5%8D%9A%E7%89%A9%E9%A6%86%E5%A4%A7%E5%8E%85.jpg",
+            brightMuralHall: "https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E5%A3%81%E7%94%BB.jpg"
+        };
+
+        const state = {
+            currentScene: 1, // 1: Hall, 2: Corridor 360, 3: Statue Hall, 4: Archives Hall
+            inputMode: 'hand', // 'hand' or 'mouse'
+            isTorchOn: true,
+            torchPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+            torchRadius: 150,
+            inventory: [],
+            puzzle: {
+                sequence: [0, 3, 1, 4, 2],
+                playerInput: [],
+                isPlayingSeq: false,
+                solved: false
+            },
+            statueToolFound: false,
+            newspaperFound: false,
+            safeUnlocked: false,
+            muralRepaired: false,
+            isWebcamCardCollapsed: false,
+            prologueRead: false,
+            paintingWorldUnlocked: false,
+            artisanToolDelivered: false,
+            innerKilnKeyFound: false,
+            ceramicShelfSolved: false,
+            pinchLatch: false,
+            archivesUnlocked: false,
+            artisanStoryPlayed: false,
+            returnMuseumPlayed: false
+        };
+
+        // CANVAS & ASSETS - SCENE 1
+        function inspectMuralMissingCorner() {
+            sfx.playClick();
+            if (state.muralRepaired) {
+                showClueWithAction('完整的壁画', '壁画缺角已经拼合，画面深处像是打开了一条通往古画内部的道路。', '进入画中世界', () => {
+                    closeClueModal();
+                    switchScene(5);
+                });
+                return;
+            }
+
+            const hasFragment = state.inventory.some(item => item.id === 'mural_fragment');
+            if (!hasFragment) {
+                showClue('画缺了一角', '可能需要找到缺少的部分。');
+            } else {
+                showClueWithAction('画缺了一角', '你找到了缺失部分。可以把壁画一角放上去。', '把壁画一角放上去', repairMural);
+            }
+        }
+
+        function repairMural() {
+            const idx = state.inventory.findIndex(item => item.id === 'mural_fragment');
+            if (idx < 0) {
+                showClue('画缺了一角', '可能需要找到缺少的部分。');
+                return;
+            }
+            state.inventory.splice(idx, 1);
+            state.muralRepaired = true;
+            initInventoryUI();
+            sfx.playSuccess();
+            showClueWithAction('壁画修复完成', '你将壁画一角准确嵌入缺口。随着机关契合声，壁画内部仿佛出现了另一处世界。', '进入画中世界', () => {
+                closeClueModal();
+                switchScene(5);
+            });
+        }
+
+        function initInventoryUI() {
+            const grid = document.getElementById('inventory-grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const item = state.inventory[i];
+                const slot = document.createElement('div');
+                slot.className = `w-14 h-14 rounded-2xl frosted-panel border border-amber-500/40 flex items-center justify-center relative cursor-pointer hover:border-amber-400 hover:scale-105 transition group ${item ? 'bg-amber-950/60' : ''}`;
+                
+                if (item) {
+                    slot.innerHTML = `
+                        <img src="${item.img}" class="w-10 h-10 object-contain group-hover:scale-110 transition drop-shadow" alt="${item.name}">
+                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-ping"></div>
+                    `;
+                    slot.onclick = () => openItemModal(item);
+                } else {
+                    slot.innerHTML = `<span class="text-xs text-amber-500/50 font-mono font-bold">${i + 1}</span>`;
+                }
+                grid.appendChild(slot);
+            }
+        }
+
+        function addItemToInventory(item) {
+            if (state.inventory.find(i => i.id === item.id)) return;
+            state.inventory.push(item);
+            sfx.playSuccess();
+            initInventoryUI();
+        }
+
+        function openItemModal(item) {
+            sfx.playClick();
+            document.getElementById('modal-item-img').src = item.img;
+            document.getElementById('modal-item-title').innerText = item.name;
+            document.getElementById('modal-item-desc').innerText = item.desc;
+            document.getElementById('item-modal').classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            sfx.playClick();
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        let clueActionHandler = null;
+        function showClue(title, desc) {
+            sfx.playClick();
+            document.getElementById('clue-title').innerText = title;
+            document.getElementById('clue-desc').innerText = desc;
+            const action = document.getElementById('clue-action-btn');
+            action.classList.add('hidden');
+            clueActionHandler = null;
+            document.getElementById('clue-modal').classList.remove('hidden');
+        }
+
+        function showClueWithAction(title, desc, label, handler) {
+            showClue(title, desc);
+            const action = document.getElementById('clue-action-btn');
+            action.innerText = label;
+            action.classList.remove('hidden');
+            clueActionHandler = handler;
+        }
+
+        function handleClueAction() {
+            if (typeof clueActionHandler === 'function') clueActionHandler();
+        }
+
+        function closeClueModal() {
+            sfx.playClick();
+            document.getElementById('clue-modal').classList.add('hidden');
+            document.getElementById('clue-action-btn').classList.add('hidden');
+            clueActionHandler = null;
+        }
+
+        function initScene1Canvas() {
+            scene1Canvas = document.getElementById('scene1-canvas');
+            scene1Ctx = scene1Canvas.getContext('2d');
+
+            scene1Canvas.width = window.innerWidth;
+            scene1Canvas.height = window.innerHeight;
+            flashlightBufferCanvas = document.createElement('canvas');
+            flashlightBufferCtx = flashlightBufferCanvas.getContext('2d');
+            flashlightBufferCanvas.width = scene1Canvas.width;
+            flashlightBufferCanvas.height = scene1Canvas.height;
+
+            baseImageScene1.crossOrigin = "anonymous";
+            baseImageScene1.src = ASSETS.scene1Dark;
+
+            spotlightVideoScene1.crossOrigin = "anonymous";
+            spotlightVideoScene1.src = ASSETS.scene1Video;
+            spotlightVideoScene1.loop = true;
+            spotlightVideoScene1.muted = true;
+            spotlightVideoScene1.playsInline = true;
+            spotlightVideoScene1.addEventListener('canplaythrough', () => {
+                isScene1VideoLoaded = true;
+                spotlightVideoScene1.play().catch(() => {});
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (state.inputMode === 'mouse') {
+                    state.torchPos.x = e.clientX;
+                    state.torchPos.y = e.clientY;
+                }
+            });
+
+            requestAnimationFrame(renderScene1);
+        }
+
+        function renderScene1() {
+            if (state.currentScene === 1) {
+                const cw = scene1Canvas.width;
+                const ch = scene1Canvas.height;
+                scene1Ctx.clearRect(0, 0, cw, ch);
+
+                if (baseImageScene1.complete && baseImageScene1.naturalWidth !== 0) {
+                    scene1Ctx.drawImage(baseImageScene1, 0, 0, cw, ch);
+                } else {
+                }
+
+                if (state.isTorchOn) {
+                    const r = state.torchRadius;
+                    if (!flashlightBufferCanvas || flashlightBufferCanvas.width !== cw || flashlightBufferCanvas.height !== ch) {
+                        flashlightBufferCanvas = flashlightBufferCanvas || document.createElement('canvas');
+                        flashlightBufferCanvas.width = cw; flashlightBufferCanvas.height = ch;
+                        flashlightBufferCtx = flashlightBufferCanvas.getContext('2d');
+                    }
+                    flashlightBufferCtx.clearRect(0, 0, cw, ch);
+                    if (isScene1VideoLoaded && spotlightVideoScene1.readyState >= 2) {
+                        flashlightBufferCtx.drawImage(spotlightVideoScene1, 0, 0, cw, ch);
+                    } else if (baseImageScene1.complete) {
+                        flashlightBufferCtx.filter = 'brightness(1.5) contrast(1.2)';
+                        flashlightBufferCtx.drawImage(baseImageScene1, 0, 0, cw, ch);
+                        flashlightBufferCtx.filter = 'none';
+                    }
+                    // Soft Gaussian-like feather: fully visible in the core, smoothly fading at the edge.
+                    const mask=flashlightBufferCtx.createRadialGradient(
+                        state.torchPos.x,state.torchPos.y,Math.max(8,r*.48),
+                        state.torchPos.x,state.torchPos.y,r*1.12
+                    );
+                    mask.addColorStop(0,'rgba(255,255,255,1)');
+                    mask.addColorStop(.62,'rgba(255,255,255,.98)');
+                    mask.addColorStop(.82,'rgba(255,255,255,.62)');
+                    mask.addColorStop(.94,'rgba(255,255,255,.18)');
+                    mask.addColorStop(1,'rgba(255,255,255,0)');
+                    flashlightBufferCtx.globalCompositeOperation='destination-in';
+                    flashlightBufferCtx.fillStyle=mask;
+                    flashlightBufferCtx.fillRect(0,0,cw,ch);
+                    flashlightBufferCtx.globalCompositeOperation='source-over';
+                    scene1Ctx.drawImage(flashlightBufferCanvas,0,0);
+                    checkAncientPaintingIlluminated();
+                }
+            }
+
+            requestAnimationFrame(renderScene1);
+        }
+
+        function checkAncientPaintingIlluminated() {
+            const cw = scene1Canvas.width;
+            const ch = scene1Canvas.height;
+            const targetX = cw * 0.5;
+            const targetY = ch * 0.42;
+            const dist = Math.hypot(state.torchPos.x - targetX, state.torchPos.y - targetY);
+
+            const hotspotEl = document.getElementById('painting-hotspot');
+            if (dist < state.torchRadius + 70 && state.isTorchOn) {
+                hotspotEl.classList.remove('hidden');
+            } else {
+                hotspotEl.classList.add('hidden');
+            }
+        }
+
+        function initScene3Canvas() {
+            scene3Canvas = document.getElementById('scene3-canvas');
+            scene3Ctx = scene3Canvas.getContext('2d');
+
+            scene3Canvas.width = window.innerWidth;
+            scene3Canvas.height = window.innerHeight;
+
+            baseImageScene3.crossOrigin = "anonymous";
+            baseImageScene3.src = ASSETS.scene3StatueDark;
+
+            spotlightVideoScene3.crossOrigin = "anonymous";
+            spotlightVideoScene3.src = ASSETS.scene3StatueVideo;
+            spotlightVideoScene3.loop = true;
+            spotlightVideoScene3.muted = true;
+            spotlightVideoScene3.playsInline = true;
+            spotlightVideoScene3.addEventListener('canplaythrough', () => {
+                isScene3VideoLoaded = true;
+                spotlightVideoScene3.play().catch(() => {});
+            });
+
+            scene3Canvas.addEventListener('click', (e) => {
+                if (state.currentScene !== 3 || !state.isTorchOn) return;
+                const bodyX = scene3Canvas.width * 0.5, bodyY = scene3Canvas.height * 0.58;
+                if (Math.hypot(e.clientX - bodyX, e.clientY - bodyY) < state.torchRadius + 120) openStatueCloseupView();
+            });
+            requestAnimationFrame(renderScene3);
+        }
+
+        function renderScene3() {
+            if (state.currentScene === 3) {
+                const cw = scene3Canvas.width;
+                const ch = scene3Canvas.height;
+                scene3Ctx.clearRect(0, 0, cw, ch);
+
+                if (baseImageScene3.complete && baseImageScene3.naturalWidth !== 0) {
+                    scene3Ctx.drawImage(baseImageScene3, 0, 0, cw, ch);
+                } else { if (baseImageScene3.complete) scene3Ctx.drawImage(baseImageScene3, 0, 0, cw, ch); }
+
+                if (state.isTorchOn) {
+                    const r = state.torchRadius;
+                    // 雕像馆：离屏光照层 + 羽化遮罩 + 轻微高斯模糊，避免手电筒出现生硬圆边。
+                    if (!window.__scene3FlashlightBuffer) {
+                        window.__scene3FlashlightBuffer = document.createElement('canvas');
+                        window.__scene3FlashlightBufferCtx = window.__scene3FlashlightBuffer.getContext('2d');
+                    }
+                    const b = window.__scene3FlashlightBuffer;
+                    const bctx = window.__scene3FlashlightBufferCtx;
+                    if (b.width !== cw || b.height !== ch) { b.width = cw; b.height = ch; }
+                    bctx.clearRect(0, 0, cw, ch);
+                    if (isScene3VideoLoaded && spotlightVideoScene3.readyState >= 2) {
+                        bctx.drawImage(spotlightVideoScene3, 0, 0, cw, ch);
+                    } else if (baseImageScene3.complete) {
+                        bctx.filter = 'brightness(1.5) contrast(1.2)';
+                        bctx.drawImage(baseImageScene3, 0, 0, cw, ch);
+                        bctx.filter = 'none';
+                    }
+
+                    // 只给“手电筒边缘遮罩”做高斯模糊，照亮区域本身保持清晰。
+                    if (!window.__scene3FlashlightMask) {
+                        window.__scene3FlashlightMask = document.createElement('canvas');
+                        window.__scene3FlashlightMaskCtx = window.__scene3FlashlightMask.getContext('2d');
+                    }
+                    const m = window.__scene3FlashlightMask;
+                    const mctx = window.__scene3FlashlightMaskCtx;
+                    if (m.width !== cw || m.height !== ch) { m.width = cw; m.height = ch; }
+                    mctx.clearRect(0, 0, cw, ch);
+                    const mask = mctx.createRadialGradient(
+                        state.torchPos.x, state.torchPos.y, Math.max(10, r * 0.62),
+                        state.torchPos.x, state.torchPos.y, r
+                    );
+                    mask.addColorStop(0, 'rgba(255,255,255,1)');
+                    mask.addColorStop(0.9, 'rgba(255,255,255,1)');
+                    mask.addColorStop(1, 'rgba(255,255,255,0)');
+                    mctx.fillStyle = mask;
+                    mctx.beginPath();
+                    mctx.arc(state.torchPos.x, state.torchPos.y, r, 0, Math.PI * 2);
+                    mctx.fill();
+
+                    // 高斯模糊只作用于圆形边缘 Alpha。
+                    const edgeSoftness = Math.max(12, Math.min(28, r * 0.12));
+                    mctx.filter = `blur(${edgeSoftness}px)`;
+                    mctx.drawImage(m, 0, 0);
+                    mctx.filter = 'none';
+
+                    bctx.globalCompositeOperation = 'destination-in';
+                    bctx.drawImage(m, 0, 0);
+                    bctx.globalCompositeOperation = 'source-over';
+                    scene3Ctx.drawImage(b, 0, 0);
+                    checkStatueFaceIlluminated();
+                    checkStatueBodyIlluminated();
+                }
+            }
+
+            requestAnimationFrame(renderScene3);
+        }
+
+        function checkStatueFaceIlluminated() {
+            const cw = scene3Canvas.width;
+            const ch = scene3Canvas.height;
+            const faceX = cw * 0.5;
+            const faceY = ch * 0.32;
+            const dist = Math.hypot(state.torchPos.x - faceX, state.torchPos.y - faceY);
+
+            const promptEl = document.getElementById('statue-face-hotspot');
+            if (dist < state.torchRadius + 60 && state.isTorchOn) {
+                promptEl.classList.remove('hidden');
+            } else {
+                promptEl.classList.add('hidden');
+            }
+        }
+
+        function checkStatueBodyIlluminated() {
+            const cw = scene3Canvas.width, ch = scene3Canvas.height;
+            const bodyX = cw * 0.5, bodyY = ch * 0.58;
+            const dist = Math.hypot(state.torchPos.x - bodyX, state.torchPos.y - bodyY);
+            const el = document.getElementById('statue-body-hotspot');
+            if (dist < state.torchRadius + 120 && state.isTorchOn) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        function inspectStatueBody() {
+            openStatueCloseupView();
+        }
+
+        function inspectStatueFace() {
+            if (state.statueToolFound) {
+                showClue('雕像面部', '雕像双目微闭，面容慈祥庄严，似乎再无其他物件。');
+                return;
+            }
+
+            state.statueToolFound = true;
+            sfx.playSuccess();
+
+            const trimmingTool = {
+                id: 'trimming_tool',
+                name: '修坯刀',
+                img: ASSETS.trimmingToolItem,
+                desc: '看起来像是用来修坯的工具，似乎有些年头了，为什么会出现在这里？'
+            };
+
+            addItemToInventory(trimmingTool);
+            showClue('搜寻发现：修坯刀', '在雕像面部发髻隐蔽处，你发现并拔出了一把细长的古代修坯刀！已收纳至储物格中。');
+        }
+
+        function initScene4Canvas() {
+            scene4Canvas = document.getElementById('scene4-canvas');
+            scene4Ctx = scene4Canvas.getContext('2d');
+
+            scene4Canvas.width = window.innerWidth;
+            scene4Canvas.height = window.innerHeight;
+
+            baseImageScene4.crossOrigin = "anonymous";
+            baseImageScene4.src = ASSETS.scene4ArchivesDark;
+
+            spotlightImageScene4.crossOrigin = "anonymous";
+            spotlightImageScene4.src = ASSETS.scene4ArchivesSpotlight;
+
+            requestAnimationFrame(renderScene4);
+        }
+
+        function renderScene4() {
+            if (state.currentScene === 4) {
+                const cw = scene4Canvas.width;
+                const ch = scene4Canvas.height;
+                scene4Ctx.clearRect(0, 0, cw, ch);
+
+                if (baseImageScene4.complete && baseImageScene4.naturalWidth !== 0) {
+                    scene4Ctx.drawImage(baseImageScene4, 0, 0, cw, ch);
+                } else { if (baseImageScene4.complete) scene4Ctx.drawImage(baseImageScene4, 0, 0, cw, ch); }
+
+                if (state.isTorchOn) {
+                    const r = state.torchRadius;
+                    // 档案室：与雕像馆一致的柔边手电筒合成。
+                    if (!window.__scene4FlashlightBuffer) {
+                        window.__scene4FlashlightBuffer = document.createElement('canvas');
+                        window.__scene4FlashlightBufferCtx = window.__scene4FlashlightBuffer.getContext('2d');
+                    }
+                    const b = window.__scene4FlashlightBuffer;
+                    const bctx = window.__scene4FlashlightBufferCtx;
+                    if (b.width !== cw || b.height !== ch) { b.width = cw; b.height = ch; }
+                    bctx.clearRect(0, 0, cw, ch);
+                    if (spotlightImageScene4.complete && spotlightImageScene4.naturalWidth !== 0) {
+                        bctx.drawImage(spotlightImageScene4, 0, 0, cw, ch);
+                    } else if (baseImageScene4.complete) {
+                        bctx.filter = 'brightness(1.5) contrast(1.2)';
+                        bctx.drawImage(baseImageScene4, 0, 0, cw, ch);
+                        bctx.filter = 'none';
+                    }
+
+                    // 只给“手电筒边缘遮罩”做高斯模糊，照亮区域本身保持清晰。
+                    if (!window.__scene4FlashlightMask) {
+                        window.__scene4FlashlightMask = document.createElement('canvas');
+                        window.__scene4FlashlightMaskCtx = window.__scene4FlashlightMask.getContext('2d');
+                    }
+                    const m = window.__scene4FlashlightMask;
+                    const mctx = window.__scene4FlashlightMaskCtx;
+                    if (m.width !== cw || m.height !== ch) { m.width = cw; m.height = ch; }
+                    mctx.clearRect(0, 0, cw, ch);
+                    const mask = mctx.createRadialGradient(
+                        state.torchPos.x, state.torchPos.y, Math.max(10, r * 0.62),
+                        state.torchPos.x, state.torchPos.y, r
+                    );
+                    mask.addColorStop(0, 'rgba(255,255,255,1)');
+                    mask.addColorStop(0.9, 'rgba(255,255,255,1)');
+                    mask.addColorStop(1, 'rgba(255,255,255,0)');
+                    mctx.fillStyle = mask;
+                    mctx.beginPath();
+                    mctx.arc(state.torchPos.x, state.torchPos.y, r, 0, Math.PI * 2);
+                    mctx.fill();
+
+                    // 高斯模糊只作用于圆形边缘 Alpha。
+                    const edgeSoftness = Math.max(12, Math.min(28, r * 0.12));
+                    mctx.filter = `blur(${edgeSoftness}px)`;
+                    mctx.drawImage(m, 0, 0);
+                    mctx.filter = 'none';
+
+                    bctx.globalCompositeOperation = 'destination-in';
+                    bctx.drawImage(m, 0, 0);
+                    bctx.globalCompositeOperation = 'source-over';
+                    scene4Ctx.drawImage(b, 0, 0);
+                    checkArchivesHotspotsIlluminated();
+                }
+            }
+
+            requestAnimationFrame(renderScene4);
+        }
+
+        function checkArchivesHotspotsIlluminated() {
+            const cw = scene4Canvas.width;
+            const ch = scene4Canvas.height;
+
+            const newsX = cw * 0.65;
+            const newsY = ch * 0.68;
+            const distNews = Math.hypot(state.torchPos.x - newsX, state.torchPos.y - newsY);
+
+            const newsEl = document.getElementById('newspaper-hotspot');
+            if (distNews < state.torchRadius + 70 && state.isTorchOn) {
+                newsEl.classList.remove('hidden');
+            } else {
+                newsEl.classList.add('hidden');
+            }
+
+            const safeX = cw * 0.35;
+            const safeY = ch * 0.42;
+            const distSafe = Math.hypot(state.torchPos.x - safeX, state.torchPos.y - safeY);
+
+            const safeEl = document.getElementById('safe-hotspot');
+            if (distSafe < state.torchRadius + 70 && state.isTorchOn) {
+                safeEl.classList.remove('hidden');
+            } else {
+                safeEl.classList.add('hidden');
+            }
+        }
+
+        function tryEnterArchives() {
+            if (state.archivesUnlocked) { switchScene(4); return; }
+            const hasKey = state.inventory.some(item => item.id === 'key_scene1');
+            if (!hasKey) {
+                sfx.playTone(180, 0.3);
+                showClue('档案馆封锁门', '这里的门被锁住了，需要钥匙。');
+            } else {
+                state.archivesUnlocked = true;
+                switchScene(4);
+            }
+        }
+
+        function inspectNewspaper() {
+            sfx.playClick();
+            document.getElementById('newspaper-modal').classList.remove('hidden');
+
+            if (!state.newspaperFound) {
+                state.newspaperFound = true;
+                const newspaperItemObj = {
+                    id: 'newspaper_item',
+                    name: '旧报纸',
+                    img: ASSETS.newspaperItem,
+                    desc: '记载着展览馆大师过往秘辛的旧报纸。'
+                };
+                addItemToInventory(newspaperItemObj);
+            }
+        }
+
+        function closeNewspaperModal() {
+            sfx.playClick();
+            document.getElementById('newspaper-modal').classList.add('hidden');
+        }
+
+        function openSafePuzzleModal() {
+            sfx.playClick();
+            document.getElementById('safe-modal').classList.remove('hidden');
+            document.getElementById('safe-passcode-input').value = '';
+            document.getElementById('safe-feedback-text').innerText = '';
+
+            if (state.safeUnlocked) {
+                document.getElementById('safe-status-img').src = ASSETS.safeOpenedImg;
+                document.getElementById('safe-input-controls').classList.add('hidden');
+            } else {
+                document.getElementById('safe-status-img').src = ASSETS.safeClosedImg;
+                document.getElementById('safe-input-controls').classList.remove('hidden');
+            }
+        }
+
+        function closeSafeModal() {
+            sfx.playClick();
+            document.getElementById('safe-modal').classList.add('hidden');
+        }
+
+        function submitSafePasscode() {
+            const val = document.getElementById('safe-passcode-input').value.trim();
+            if (val === '1972') {
+                state.safeUnlocked = true;
+                sfx.playSuccess();
+                document.getElementById('safe-status-img').src = ASSETS.safeOpenedImg;
+                document.getElementById('safe-input-controls').classList.add('hidden');
+
+                const muralItemObj = {
+                    id: 'mural_fragment',
+                    name: '壁画碎片与字条',
+                    img: ASSETS.muralItem,
+                    desc: '某件画作上的一个角落和一张纸条，上面写着:我不能失去我现在的一切。'
+                };
+                addItemToInventory(muralItemObj);
+                showClue('保险柜已开启', '保险柜门轰然打开！获得了关键道具【壁画碎片与字条】！已收纳至储物格。');
+            } else {
+                sfx.playTone(160, 0.4);
+                document.getElementById('safe-feedback-text').innerText = '密码错误，请重新输入';
+            }
+        }
+
+        function initMuralCanvas() {
+            muralCanvas = document.getElementById('mural-canvas');
+            muralCtx = muralCanvas.getContext('2d');
+            muralFlashlightBufferCanvas = document.createElement('canvas');
+            muralFlashlightBufferCtx = muralFlashlightBufferCanvas.getContext('2d');
+
+            baseImageMural.crossOrigin = "anonymous";
+            baseImageMural.src = ASSETS.muralDark;
+
+            spotlightVideoMural.crossOrigin = "anonymous";
+            spotlightVideoMural.src = ASSETS.muralVideo;
+            spotlightVideoMural.loop = true;
+            spotlightVideoMural.muted = true;
+            spotlightVideoMural.playsInline = true;
+            spotlightVideoMural.addEventListener('canplaythrough', () => {
+                isMuralVideoLoaded = true;
+                spotlightVideoMural.play().catch(() => {});
+            });
+
+            requestAnimationFrame(renderMuralCanvas);
+        }
+
+        function renderMuralCanvas() {
+            if (isMuralOpen) {
+                const container = document.getElementById('mural-canvas-container');
+                muralCanvas.width = container.clientWidth;
+                muralCanvas.height = container.clientHeight;
+
+                const cw = muralCanvas.width;
+                const ch = muralCanvas.height;
+
+                muralCtx.clearRect(0, 0, cw, ch);
+
+                if (baseImageMural.complete && baseImageMural.naturalWidth !== 0) {
+                    muralCtx.drawImage(baseImageMural, 0, 0, cw, ch);
+                } else {
+                    muralCtx.fillStyle = '#130c08';
+                    muralCtx.fillRect(0, 0, cw, ch);
+                }
+
+                if (state.isTorchOn) {
+                    // Soft Gaussian-like flashlight edge: render the illuminated layer offscreen,
+                    // then feather its alpha smoothly instead of using a hard circular clip.
+                    if (!muralFlashlightBufferCanvas || muralFlashlightBufferCanvas.width !== cw || muralFlashlightBufferCanvas.height !== ch) {
+                        muralFlashlightBufferCanvas = muralFlashlightBufferCanvas || document.createElement('canvas');
+                        muralFlashlightBufferCanvas.width = cw;
+                        muralFlashlightBufferCanvas.height = ch;
+                        muralFlashlightBufferCtx = muralFlashlightBufferCanvas.getContext('2d');
+                    }
+                    muralFlashlightBufferCtx.clearRect(0, 0, cw, ch);
+                    if (isMuralVideoLoaded && spotlightVideoMural.readyState >= 2) {
+                        muralFlashlightBufferCtx.drawImage(spotlightVideoMural, 0, 0, cw, ch);
+                    } else if (baseImageMural.complete) {
+                        muralFlashlightBufferCtx.filter = 'brightness(1.5) contrast(1.2)';
+                        muralFlashlightBufferCtx.drawImage(baseImageMural, 0, 0, cw, ch);
+                        muralFlashlightBufferCtx.filter = 'none';
+                    }
+
+                    const r = state.torchRadius;
+                    const edge = muralFlashlightBufferCtx.createRadialGradient(
+                        state.torchPos.x, state.torchPos.y, Math.max(8, r * 0.46),
+                        state.torchPos.x, state.torchPos.y, r * 1.14
+                    );
+                    edge.addColorStop(0, 'rgba(255,255,255,1)');
+                    edge.addColorStop(0.58, 'rgba(255,255,255,0.99)');
+                    edge.addColorStop(0.78, 'rgba(255,255,255,0.72)');
+                    edge.addColorStop(0.92, 'rgba(255,255,255,0.28)');
+                    edge.addColorStop(1, 'rgba(255,255,255,0)');
+                    muralFlashlightBufferCtx.globalCompositeOperation = 'destination-in';
+                    muralFlashlightBufferCtx.fillStyle = edge;
+                    muralFlashlightBufferCtx.fillRect(0, 0, cw, ch);
+                    muralFlashlightBufferCtx.globalCompositeOperation = 'source-over';
+                    muralCtx.drawImage(muralFlashlightBufferCanvas, 0, 0);
+                    checkMuralMissingIlluminated();
+                }
+            }
+
+            requestAnimationFrame(renderMuralCanvas);
+        }
+
+        function checkMuralMissingIlluminated() {
+            const container=document.getElementById('mural-canvas-container');
+            const hotspot=document.querySelector('#mural-canvas-container [data-mural-missing]');
+            if (!hotspot) return;
+            const x=container.clientWidth*0.82, y=container.clientHeight*0.30;
+            const dist=Math.hypot(state.torchPos.x-x,state.torchPos.y-y);
+            hotspot.classList.toggle('hidden', !(state.isTorchOn && dist < state.torchRadius + 90));
+        }
+
+        function openMuralView() {
+            sfx.playClick();
+            isMuralOpen = true;
+            document.getElementById('mural-modal').classList.remove('hidden');
+        }
+
+        function closeMuralView() {
+            sfx.playClick();
+            isMuralOpen = false;
+            document.getElementById('mural-modal').classList.add('hidden');
+        }
+
+        function initWebcamMediaPipe() {
+            webcamVideo = document.getElementById('webcam-video');
+            previewCanvas = document.getElementById('preview-canvas');
+            previewCtx = previewCanvas.getContext('2d');
+
+            previewCanvas.width = 240;
+            previewCanvas.height = 135;
+
+            handsTracker = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            handsTracker.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            handsTracker.onResults(onHandResults);
+
+            cameraUtils = new Camera(webcamVideo, {
+                onFrame: async () => {
+                    await handsTracker.send({ image: webcamVideo });
+                },
+                width: 640,
+                height: 480
+            });
+
+            try {
+                cameraUtils.start();
+            } catch (err) {
+                console.warn('摄像头启动失败，已切换鼠标控制：', err);
+                state.inputMode = 'mouse';
+                updateInputModeUI();
+            }
+        }
+
+        function onHandResults(results) {
+            const pw = previewCanvas.width;
+            const ph = previewCanvas.height;
+            previewCtx.save();
+            previewCtx.clearRect(0, 0, pw, ph);
+            if (results.image) {
+                previewCtx.filter = 'blur(12px) brightness(0.55)';
+                previewCtx.drawImage(results.image, 0, 0, pw, ph);
+                previewCtx.filter = 'none';
+            }
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const wrist = landmarks[0];
+                const indexTip = landmarks[8];
+                const middleMcp = landmarks[9];
+                const indexMcp = landmarks[5];
+                const thumbTip = landmarks[4];
+                const palmX = (wrist.x + indexMcp.x + middleMcp.x + landmarks[13].x + landmarks[17].x) / 5;
+                const palmY = (wrist.y + indexMcp.y + middleMcp.y + landmarks[13].y + landmarks[17].y) / 5;
+                if (state.inputMode === 'hand') {
+                    const targetX = (1 - indexTip.x) * window.innerWidth;
+                    const targetY = indexTip.y * window.innerHeight;
+                    const smoothing = 0.42;
+                    state.torchPos.x += (targetX - state.torchPos.x) * smoothing;
+                    state.torchPos.y += (targetY - state.torchPos.y) * smoothing;
+                    // Thumb-index distance controls the flashlight diameter: pinch = smaller, open = larger.
+                    const pinchDistance = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
+                    const normalized = Math.max(0, Math.min(1, (pinchDistance - 0.025) / 0.22));
+                    const targetRadius = 88 + normalized * 205;
+                    state.torchRadius += (targetRadius - state.torchRadius) * 0.28;
+                }
+                if (typeof window.drawConnectors === 'function' && typeof window.HAND_CONNECTIONS !== 'undefined') window.drawConnectors(previewCtx, landmarks, window.HAND_CONNECTIONS, { color: '#fbbf24', lineWidth: 6 });
+                if (typeof window.drawLandmarks === 'function') window.drawLandmarks(previewCtx, landmarks, { color: '#67e8f9', lineWidth: 2, radius: 5 });
+                const pinch = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y) < 0.055;
+                const bodyX = window.innerWidth * 0.5, bodyY = window.innerHeight * 0.58;
+                if (pinch && !state.pinchLatch && state.currentScene === 3 && state.isTorchOn && Math.hypot(state.torchPos.x - bodyX, state.torchPos.y - bodyY) < state.torchRadius + 110) {
+                    openStatueCloseupView();
+                }
+                state.pinchLatch = pinch;
+                previewCtx.beginPath();
+                previewCtx.arc((1 - palmX) * pw, palmY * ph, 5, 0, Math.PI * 2);
+                previewCtx.fillStyle = '#ef4444'; previewCtx.fill();
+            } else {
+                state.pinchLatch = false;
+            }
+            previewCtx.restore();
+            document.getElementById('flashlight-pos-text').innerText = `光圈: (${Math.round(state.torchPos.x)}, ${Math.round(state.torchPos.y)})`;
+            document.getElementById('flashlight-size-text').innerText = `半径: ${Math.round(state.torchRadius)}px`;
+        }
+
+        function initThreeJSPaintingWorld() {
+            const container = document.getElementById('painting-world-three-container');
+            threeScenePaintingWorld = new THREE.Scene();
+            threeCameraPaintingWorld = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+            threeCameraPaintingWorld.target = new THREE.Vector3(0,0,0);
+            const geometry = new THREE.SphereGeometry(500, 60, 40); geometry.scale(-1,1,1);
+            const material = new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(ASSETS.paintingWorld) });
+            threeScenePaintingWorld.add(new THREE.Mesh(geometry, material));
+            threeRendererPaintingWorld = new THREE.WebGLRenderer({antialias:true});
+            threeRendererPaintingWorld.setPixelRatio(window.devicePixelRatio); threeRendererPaintingWorld.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(threeRendererPaintingWorld.domElement);
+            container.addEventListener('pointerdown', e => { isUserInteractingPaintingWorld=true; onPointerDownXPaintingWorld=e.clientX; onPointerDownYPaintingWorld=e.clientY; onPointerDownLonPaintingWorld=lonPaintingWorld; onPointerDownLatPaintingWorld=latPaintingWorld; });
+            container.addEventListener('pointermove', e => { if (isUserInteractingPaintingWorld) { lonPaintingWorld=(onPointerDownXPaintingWorld-e.clientX)*0.1+onPointerDownLonPaintingWorld; latPaintingWorld=(e.clientY-onPointerDownYPaintingWorld)*0.1+onPointerDownLatPaintingWorld; } });
+            container.addEventListener('pointerup', ()=>isUserInteractingPaintingWorld=false);
+            animatePaintingWorld();
+        }
+
+        function animatePaintingWorld() {
+            requestAnimationFrame(animatePaintingWorld);
+            if (!threeRendererPaintingWorld || !isPaintingWorldOpen) return;
+            if (!isUserInteractingPaintingWorld) lonPaintingWorld += 0.15;
+            latPaintingWorld=Math.max(-85,Math.min(85,latPaintingWorld));
+            const phi=THREE.MathUtils.degToRad(90-latPaintingWorld), theta=THREE.MathUtils.degToRad(lonPaintingWorld);
+            threeCameraPaintingWorld.target.x=500*Math.sin(phi)*Math.cos(theta); threeCameraPaintingWorld.target.y=500*Math.cos(phi); threeCameraPaintingWorld.target.z=500*Math.sin(phi)*Math.sin(theta);
+            threeCameraPaintingWorld.lookAt(threeCameraPaintingWorld.target); threeRendererPaintingWorld.render(threeScenePaintingWorld,threeCameraPaintingWorld);
+        }
+
+        function openArtisanCloseup() { sfx.playClick(); switchScene(6); }
+
+        function openConversation(queue, after=null) {
+            conversationQueue = queue || [];
+            conversationIndex = 0;
+            conversationAfter = after;
+            if (!conversationQueue.length) return;
+            document.getElementById('conversation-modal').classList.remove('hidden');
+            renderConversationLine();
+        }
+        function renderConversationLine() {
+            const line = conversationQueue[conversationIndex];
+            document.getElementById('conversation-speaker').innerText = line.speaker;
+            document.getElementById('conversation-text').innerText = line.text;
+        }
+        function advanceConversation() {
+            sfx.playClick();
+            conversationIndex++;
+            if (conversationIndex >= conversationQueue.length) {
+                document.getElementById('conversation-modal').classList.add('hidden');
+                const cb = conversationAfter; conversationAfter = null;
+                if (cb) cb();
+                return;
+            }
+            renderConversationLine();
+        }
+        function talkToArtisan() {
+            if (state.artisanToolDelivered) { switchScene(7); return; }
+            const hasTool = state.inventory.some(item => item.id === 'trimming_tool');
+            if (!hasTool) {
+                openConversation([{speaker:'老工匠', text:'这里是我制作陶瓷的地方。我的修坯刀不见了。'}, {speaker:'系统', text:'需要找到修坯刀！'}]);
+                return;
+            }
+            if (!state.artisanToolDelivered) {
+                openConversation([
+                    {speaker:'主角', text:'老人家，这里是哪里？'},
+                    {speaker:'老工匠', text:'这里是我制作陶瓷的地方。我的修坯刀不见了。'},
+                    {speaker:'主角', text:'是这个吗？'},
+                ], deliverToolToArtisan);
+                return;
+            }
+            openConversation([{speaker:'老工匠', text:'谢谢你。修坯刀找回来了。'}, {speaker:'主角', text:'那我可以去看看里面吗？'}, {speaker:'老工匠', text:'去吧。'}], () => switchScene(7));
+        }
+        function deliverToolToArtisan() {
+            const idx=state.inventory.findIndex(item=>item.id==='trimming_tool');
+            if(idx<0){ openConversation([{speaker:'系统',text:'需要找到修坯刀！'}]); return; }
+            state.inventory.splice(idx,1); state.artisanToolDelivered=true; initInventoryUI(); sfx.playSuccess();
+            openConversation([{speaker:'老工匠', text:'是我的修坯刀……谢谢你。'}, {speaker:'主角', text:'不客气。'}, {speaker:'老工匠', text:'窑房就在那边。'}], () => switchScene(7));
+        }
+
+        function talkToKilnArtisan() {
+            openConversation([
+                {speaker:'主角', text:'怎么回事，这位老人不是在外面吗，怎么又出现了？'},
+                {speaker:'老工匠', text:'我烧了一辈子陶瓷，可是最后没有一件是我的...'},
+                {speaker:'主角', text:'老人家，可以告诉我您怎么了吗，或者有什么我可以帮上忙的吗'},
+                {speaker:'老工匠', text:'……'}
+            ]);
+        }
+
+        function openCeramicShelfGame() {
+            if (state.ceramicShelfSolved) { showClue('陶瓷架子', '六件陶瓷已经归位。你从架子后的暗格中发现了一把钥匙。'); return; }
+            switchScene(9); buildCeramicPuzzle();
+        }
+
+        function buildCeramicPuzzle() {
+            const board=document.getElementById('ceramic-puzzle-board');
+            board.innerHTML='';
+            const shapes=[
+                {name:'长颈瓶',cls:'ceramic-bottle bottle-a',color:'#c98b5d'},
+                {name:'细口瓶',cls:'ceramic-bottle bottle-b',color:'#7698b8'},
+                {name:'葫芦瓶',cls:'ceramic-bottle bottle-c',color:'#9caa6f'},
+                {name:'梅瓶',cls:'ceramic-bottle bottle-d',color:'#b87578'},
+                {name:'扁腹瓶',cls:'ceramic-bottle bottle-e',color:'#8d77a8'},
+                {name:'高肩瓶',cls:'ceramic-bottle bottle-f',color:'#b99a61'}
+            ];
+            const targetPos=[{x:18,y:28},{x:31,y:28},{x:44,y:28},{x:57,y:28},{x:70,y:28},{x:83,y:28}];
+            // 目标位置保持固定，散落陶瓷每次随机打乱并分散到远处角落。
+            const spread=[
+                {x:8,y:78},{x:24,y:88},{x:43,y:76},{x:61,y:88},{x:79,y:76},{x:92,y:88},
+                {x:7,y:48},{x:95,y:55},{x:16,y:67},{x:86,y:62}
+            ];
+            const shuffled=shapes.map((_,i)=>i).sort(()=>Math.random()-0.5);
+            const positions=spread.slice().sort(()=>Math.random()-0.5).slice(0,6);
+            shapes.forEach((sh,i)=>{
+                const target=document.createElement('div');
+                target.className=`ceramic-target ${sh.cls}`; target.dataset.shape=i;
+                target.style.left=targetPos[i].x+'%'; target.style.top=targetPos[i].y+'%';
+                target.style.background='rgba(80,60,45,.48)';
+                target.style.filter='grayscale(1)';
+                board.appendChild(target);
+            });
+            shuffled.forEach((shapeIndex,order)=>{
+                const sh=shapes[shapeIndex], pos=positions[order];
+                const piece=document.createElement('div');
+                piece.className=`ceramic-piece ${sh.cls}`; piece.style.left=pos.x+'%'; piece.style.top=pos.y+'%';
+                piece.style.background=sh.color; piece.dataset.shape=shapeIndex; piece.title=sh.name+'陶瓷';
+                piece.setAttribute('aria-label',sh.name+'陶瓷');
+                piece.addEventListener('pointerdown',e=>{
+                    if(piece.classList.contains('placed')) return;
+                    e.preventDefault();
+                    piece.setPointerCapture(e.pointerId);
+                    piece.dataset.dragging='1';
+                    piece.style.zIndex='30';
+                });
+                piece.addEventListener('pointermove',e=>{
+                    if(piece.dataset.dragging!=='1') return;
+                    const rect=board.getBoundingClientRect();
+                    const x=Math.max(3,Math.min(97,(e.clientX-rect.left)/rect.width*100));
+                    const y=Math.max(8,Math.min(94,(e.clientY-rect.top)/rect.height*100));
+                    piece.style.left=x+'%'; piece.style.top=y+'%';
+                });
+                piece.addEventListener('pointerup',e=>{
+                    if(piece.dataset.dragging!=='1') return;
+                    piece.dataset.dragging='0'; piece.style.zIndex='5';
+                    try{piece.releasePointerCapture(e.pointerId);}catch(_){}
+                    const target=board.querySelector(`.ceramic-target[data-shape="${shapeIndex}"]`);
+                    checkCeramicPlacement(piece,target);
+                });
+                piece.addEventListener('pointercancel',()=>{piece.dataset.dragging='0';piece.style.zIndex='5';});
+                board.appendChild(piece);
+            });
+        }
+        function checkCeramicPlacement(piece,target){
+            const a=piece.getBoundingClientRect(), b=target.getBoundingClientRect();
+            if(Math.abs((a.left+a.width/2)-(b.left+b.width/2))<70 && Math.abs((a.top+a.height/2)-(b.top+b.height/2))<70){
+                piece.style.left=target.style.left; piece.style.top=target.style.top; piece.style.pointerEvents='none'; piece.classList.add('placed'); target.classList.add('filled');
+                const all=[...document.querySelectorAll('.ceramic-piece')].every(x=>x.classList.contains('placed'));
+                if(all) solveCeramicShelf();
+            }
+        }
+        function skipCeramicShelf(){if(state.ceramicShelfSolved)return;state.ceramicShelfSolved=true;state.innerKilnKeyFound=true;addItemToInventory({id:'inner_kiln_key',name:'内部窑房的钥匙',img:ASSETS.innerKilnKey,desc:'内部窑房的钥匙'});sfx.playSuccess();showClue('跳过摆放成功','你跳过陶瓷归位，暗格开启并获得内部窑房的钥匙。');}
+        function skipCeramicShelfNoKey(){ if(state.ceramicShelfSolved) return; sfx.playClick(); showClueWithAction('跳过陶瓷架子','你选择跳过这一步，但不会获得内部窑房的钥匙。','返回窑房',()=>{ closeClueModal(); switchScene(7); }); }
+        function solveCeramicShelf(){
+            state.ceramicShelfSolved=true; state.innerKilnKeyFound=true; sfx.playSuccess();
+            addItemToInventory({id:'inner_kiln_key',name:'内部窑房的钥匙',img:ASSETS.innerKilnKey,desc:'内部窑房的钥匙'});
+            showClue('陶瓷归位成功','六件陶瓷全部归位，架子后的暗格打开了。获得：内部窑房的钥匙');
+        }
+        function openInnerKiln(){
+            if(!state.innerKilnKeyFound){ showClue('内部窑房','门锁住了，需要钥匙'); return; }
+            switchScene(8);
+        }
+        function useNewspaperInInnerKiln(){
+            const has=state.inventory.some(i=>i.id==='newspaper_item');
+            if(!has){ showClue('报纸','需要先找到报纸。'); return; }
+            openConversation([{speaker:'主角',text:'这尊雕像...和展览馆的一模一样！'}]);
+        }
+        function talkToInnerKilnOldMan(){
+            openConversation([
+                {speaker:'老人',text:'这是我烧过的最大陶瓷，可惜再也见不到了...'},
+                {speaker:'主角',text:'什么？这尊陶瓷的作者不是有名的大师吗，怎么会是一个如此落魄的老人？大师的照片我在各大新闻都有看到过，可是和这位老人完全不一样，难道...'}
+            ], ()=>{
+                startArtisanStory();
+            });
+        }
+
+        function startArtisanStory() {
+            if (state.artisanStoryPlayed) { openReturnMuseumVideo(); return; }
+            sfx.playClick();
+            const modal=document.getElementById('story-video-modal');
+            const video=document.getElementById('artisan-story-video');
+            modal.classList.remove('hidden');
+            video.currentTime=0;
+            video.load();
+            video.play().catch(()=>{});
+        }
+        function closeStoryVideo(){
+            const modal=document.getElementById('story-video-modal');
+            const video=document.getElementById('artisan-story-video');
+            video.pause(); modal.classList.add('hidden');
+        }
+        function showStoryMiddle(){
+            closeStoryVideo();
+            state.artisanStoryPlayed=true;
+            document.getElementById('story-middle-screen').classList.remove('hidden');
+        }
+        function openReturnMuseumVideo(){
+            document.getElementById('story-middle-screen').classList.add('hidden');
+            const modal=document.getElementById('return-video-modal');
+            const video=document.getElementById('return-museum-video');
+            modal.classList.remove('hidden'); video.currentTime=0; video.load(); video.play().catch(()=>{});
+        }
+        function finishReturnMuseumVideo(){
+            const video=document.getElementById('return-museum-video');
+            video.pause(); document.getElementById('return-video-modal').classList.add('hidden');
+            state.returnMuseumPlayed=true; state.artisanStoryPlayed=true; switchScene(10);
+        }
+
+        function initBrightPanorama(containerId, imageUrl, kind){
+            const container=document.getElementById(containerId);
+            if(!container) return;
+            // 最后的明亮巨大雕像馆只初始化一次，避免重复进入时重新创建 WebGL 与重新解码全景。
+            if(kind==='statueNew' && threeRendererBrightStatueNew){
+                const loading=document.getElementById('bright-statue-new-loading');
+                if(loading) loading.classList.add('hidden');
+                return;
+            }
+
+            const scene=new THREE.Scene();
+            const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,1,1100);
+            camera.target=new THREE.Vector3(0,0,0);
+            // 最后的雕像馆降低球体细分，肉眼画质基本不变但明显减少首次创建与持续渲染开销。
+            const segments=kind==='statueNew' ? 40 : 60;
+            const rings=kind==='statueNew' ? 28 : 40;
+            const geometry=new THREE.SphereGeometry(500,segments,rings); geometry.scale(-1,1,1);
+
+            let loading=null;
+            if(kind==='statueNew'){
+                loading=document.getElementById('bright-statue-new-loading');
+                if(!loading){
+                    loading=document.createElement('div');
+                    loading.id='bright-statue-new-loading';
+                    loading.className='absolute inset-0 z-[45] flex items-center justify-center bg-[#090909] transition-opacity duration-300';
+                    loading.innerHTML='<div class="flex flex-col items-center gap-4 text-center px-6"><div class="w-10 h-10 rounded-full border-2 border-amber-300/25 border-t-amber-300 animate-spin"></div><div class="text-amber-100 text-base font-bold tracking-widest">正在加载明亮雕像馆全景</div><div class="text-amber-200/55 text-xs">正在载入 360° 场景，请稍候…</div></div>';
+                    container.appendChild(loading);
+                } else {
+                    loading.classList.remove('hidden');
+                }
+            }
+
+            const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+            renderer.setPixelRatio(kind==='statueNew' ? Math.min(window.devicePixelRatio || 1, 1.25) : window.devicePixelRatio);
+            renderer.setSize(window.innerWidth,window.innerHeight);
+            renderer.domElement.style.touchAction='none';
+            renderer.domElement.style.userSelect='none';
+            renderer.domElement.style.webkitUserSelect='none';
+            renderer.domElement.style.display='block';
+            renderer.domElement.style.cursor='grab';
+            container.appendChild(renderer.domElement);
+
+            const textureLoader=new THREE.TextureLoader();
+            textureLoader.setCrossOrigin('anonymous');
+            const texture=textureLoader.load(
+                imageUrl,
+                () => {
+                    if(loading) loading.classList.add('hidden');
+                    renderer.render(scene,camera);
+                },
+                undefined,
+                (err) => {
+                    console.error('全景素材加载失败:', imageUrl, err);
+                    if(loading){
+                        loading.innerHTML='<div class="flex flex-col items-center gap-3 text-center px-6"><div class="text-amber-200 text-base font-bold">全景素材加载失败</div><div class="text-amber-100/60 text-xs">请刷新页面后重试</div></div>';
+                    }
+                }
+            );
+            texture.colorSpace=THREE.SRGBColorSpace;
+            texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),2);
+            scene.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({map:texture})));
+
+            if(kind==='museum'){
+                threeSceneBrightMuseum=scene;threeCameraBrightMuseum=camera;threeRendererBrightMuseum=renderer;
+            } else if(kind==='statueNew'){
+                threeSceneBrightStatueNew=scene;threeCameraBrightStatueNew=camera;threeRendererBrightStatueNew=renderer;
+            } else {
+                threeSceneBrightMural=scene;threeCameraBrightMural=camera;threeRendererBrightMural=renderer;
+            }
+
+            // 明亮巨大雕像馆使用与黑暗雕像馆一致的 document 级拖动方式，避免 overlay/UI 或 pointer capture 导致拖不动。
+            const drag={down:false,x:0,y:0,lon:0,lat:0,pointerId:null};
+            const getLon=()=>kind==='museum'?lonBrightMuseum:(kind==='statueNew'?lonBrightStatueNew:lonBrightMural);
+            const getLat=()=>kind==='museum'?latBrightMuseum:(kind==='statueNew'?latBrightStatueNew:latBrightMural);
+            const setAngles=(lon,lat)=>{
+                if(kind==='museum'){lonBrightMuseum=lon;latBrightMuseum=lat;}
+                else if(kind==='statueNew'){lonBrightStatueNew=lon;latBrightStatueNew=lat;}
+                else{lonBrightMural=lon;latBrightMural=lat;}
+            };
+            renderer.domElement.addEventListener('pointerdown',e=>{
+                if(e.button!==undefined && e.button!==0) return;
+                e.preventDefault();
+                drag.down=true; drag.pointerId=e.pointerId; drag.x=e.clientX; drag.y=e.clientY;
+                if(kind==='museum') isUserInteractingBrightMuseum=true;
+                else if(kind==='mural') isUserInteractingBrightMural=true;
+                else if(kind==='statueNew') isUserInteractingBrightStatueNew=true;
+                drag.lon=getLon(); drag.lat=getLat();
+                renderer.domElement.style.cursor='grabbing';
+                renderer.domElement.setPointerCapture?.(e.pointerId);
+            },{passive:false});
+            window.addEventListener('pointermove',e=>{
+                if(!drag.down || e.pointerId!==drag.pointerId) return;
+                e.preventDefault();
+                const lon=(drag.x-e.clientX)*0.1+drag.lon;
+                const lat=(e.clientY-drag.y)*0.1+drag.lat;
+                setAngles(lon,lat);
+            },{passive:false});
+            const releaseDrag=()=>{
+                if(!drag.down) return;
+                drag.down=false;
+                drag.pointerId=null;
+                if(kind==='museum') isUserInteractingBrightMuseum=false;
+                else if(kind==='mural') isUserInteractingBrightMural=false;
+                else if(kind==='statueNew') isUserInteractingBrightStatueNew=false;
+                renderer.domElement.style.cursor='grab';
+            };
+            window.addEventListener('pointerup',releaseDrag);
+            window.addEventListener('pointercancel',releaseDrag);
+            renderer.domElement.addEventListener('lostpointercapture',releaseDrag);
+        }
+        function animateBrightPanorama(){
+            requestAnimationFrame(animateBrightPanorama);
+            const render=(scene,camera,renderer,lon,lat,active)=>{if(!scene||!renderer||!active)return;lat=Math.max(-85,Math.min(85,lat));const phi=THREE.MathUtils.degToRad(90-lat),theta=THREE.MathUtils.degToRad(lon);camera.target.x=500*Math.sin(phi)*Math.cos(theta);camera.target.y=500*Math.cos(phi);camera.target.z=500*Math.sin(phi)*Math.sin(theta);camera.lookAt(camera.target);renderer.render(scene,camera);};
+            if(state.currentScene===10 && !isUserInteractingBrightMuseum) lonBrightMuseum += 0.15;
+            if(state.currentScene===11 && !isUserInteractingBrightMural) lonBrightMural += 0.15;
+            if(state.currentScene===13 && !isUserInteractingBrightStatueNew) lonBrightStatueNew += 0.15;
+            render(threeSceneBrightMuseum,threeCameraBrightMuseum,threeRendererBrightMuseum,lonBrightMuseum,latBrightMuseum,state.currentScene===10);
+            render(threeSceneBrightMural,threeCameraBrightMural,threeRendererBrightMural,lonBrightMural,latBrightMural,state.currentScene===11);
+             render(threeSceneBrightStatueNew,threeCameraBrightStatueNew,threeRendererBrightStatueNew,lonBrightStatueNew,latBrightStatueNew,state.currentScene===13);
+        }
+
+        function initThreeJSInnerKiln(){
+            const container=document.getElementById('inner-kiln-three-container');
+            threeSceneInnerKiln=new THREE.Scene();
+            threeCameraInnerKiln=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,1,1100); threeCameraInnerKiln.target=new THREE.Vector3(0,0,0);
+            const geometry=new THREE.SphereGeometry(500,60,40); geometry.scale(-1,1,1);
+            const material=new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load(ASSETS.innerKiln)});
+            threeSceneInnerKiln.add(new THREE.Mesh(geometry,material));
+            threeRendererInnerKiln=new THREE.WebGLRenderer({antialias:true}); threeRendererInnerKiln.setPixelRatio(window.devicePixelRatio); threeRendererInnerKiln.setSize(window.innerWidth,window.innerHeight); container.appendChild(threeRendererInnerKiln.domElement);
+            container.addEventListener('pointerdown',e=>{isUserInteractingInnerKiln=true;onPointerDownXInnerKiln=e.clientX;onPointerDownYInnerKiln=e.clientY;onPointerDownLonInnerKiln=lonInnerKiln;onPointerDownLatInnerKiln=latInnerKiln;});
+            container.addEventListener('pointermove',e=>{if(isUserInteractingInnerKiln){lonInnerKiln=(onPointerDownXInnerKiln-e.clientX)*0.1+onPointerDownLonInnerKiln;latInnerKiln=(e.clientY-onPointerDownYInnerKiln)*0.1+onPointerDownLatInnerKiln;}});
+            container.addEventListener('pointerup',()=>isUserInteractingInnerKiln=false); animateInnerKiln();
+        }
+        function animateInnerKiln(){requestAnimationFrame(animateInnerKiln);if(state.currentScene!==8||!threeRendererInnerKiln)return;if(!isUserInteractingInnerKiln) lonInnerKiln += 0.15;latInnerKiln=Math.max(-85,Math.min(85,latInnerKiln));const phi=THREE.MathUtils.degToRad(90-latInnerKiln),theta=THREE.MathUtils.degToRad(lonInnerKiln);threeCameraInnerKiln.target.x=500*Math.sin(phi)*Math.cos(theta);threeCameraInnerKiln.target.y=500*Math.cos(phi);threeCameraInnerKiln.target.z=500*Math.sin(phi)*Math.sin(theta);threeCameraInnerKiln.lookAt(threeCameraInnerKiln.target);threeRendererInnerKiln.render(threeSceneInnerKiln,threeCameraInnerKiln);}
+
+        function initThreeJS2() {
+            const container = document.getElementById('three-container');
+
+            threeScene2 = new THREE.Scene();
+            threeCamera2 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+            threeCamera2.target = new THREE.Vector3(0, 0, 0);
+
+            const geometry = new THREE.SphereGeometry(500, 60, 40);
+            geometry.scale(-1, 1, 1);
+
+            const textureLoader = new THREE.TextureLoader();
+            
+            const createFallbackTexture = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1024;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createLinearGradient(0, 0, 0, 512);
+                grad.addColorStop(0, '#1c110b');
+                grad.addColorStop(0.5, '#3a2215');
+                grad.addColorStop(1, '#0d0704');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 1024, 512);
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = '32px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('秘色画长廊 (360°全景场景)', 512, 256);
+                return new THREE.CanvasTexture(canvas);
+            };
+
+            const material = new THREE.MeshBasicMaterial({
+                map: createFallbackTexture()
+            });
+
+            textureLoader.load(
+                ASSETS.scene2Corridor,
+                (texture) => {
+                    material.map = texture;
+                    material.needsUpdate = true;
+                    threeRenderer2.render(threeScene2, threeCamera2);
+                },
+                undefined,
+                () => {
+                    console.warn('3d texture load fallback activated');
+                }
+            );
+
+            const sphere = new THREE.Mesh(geometry, material);
+            threeScene2.add(sphere);
+
+            threeRenderer2 = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer2.setPixelRatio(window.devicePixelRatio);
+            threeRenderer2.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(threeRenderer2.domElement);
+
+            container.addEventListener('pointerdown', (e) => {
+                isUserInteracting2 = true;
+                onPointerDownX2 = e.clientX;
+                onPointerDownY2 = e.clientY;
+                onPointerDownLon2 = lon2;
+                onPointerDownLat2 = lat2;
+            });
+            document.addEventListener('pointermove', (e) => {
+                if (isUserInteracting2) {
+                    lon2 = (onPointerDownX2 - e.clientX) * 0.1 + onPointerDownLon2;
+                    lat2 = (e.clientY - onPointerDownY2) * 0.1 + onPointerDownLat2;
+                }
+            });
+            document.addEventListener('pointerup', () => {
+                isUserInteracting2 = false;
+            });
+
+            animateThree2();
+        }
+
+        function animateThree2() {
+            requestAnimationFrame(animateThree2);
+            if (state.currentScene === 2) {
+                lat2 = Math.max(-85, Math.min(85, lat2));
+                const phi = THREE.MathUtils.degToRad(90 - lat2);
+                const theta = THREE.MathUtils.degToRad(lon2);
+
+                threeCamera2.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                threeCamera2.target.y = 500 * Math.cos(phi);
+                threeCamera2.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+                threeCamera2.lookAt(threeCamera2.target);
+                threeRenderer2.render(threeScene2, threeCamera2);
+            }
+        }
+
+        function initThreeJSStatue() {
+            const container = document.getElementById('statue-three-container');
+
+            threeSceneStatue = new THREE.Scene();
+            threeCameraStatue = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+            threeCameraStatue.target = new THREE.Vector3(0, 0, 0);
+
+            const geometry = new THREE.SphereGeometry(500, 60, 40);
+            geometry.scale(-1, 1, 1);
+
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(ASSETS.statueCloseup, () => {
+                threeRendererStatue.render(threeSceneStatue, threeCameraStatue);
+            });
+
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const sphere = new THREE.Mesh(geometry, material);
+            threeSceneStatue.add(sphere);
+
+            threeRendererStatue = new THREE.WebGLRenderer({ antialias: true });
+            threeRendererStatue.setPixelRatio(window.devicePixelRatio);
+            threeRendererStatue.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(threeRendererStatue.domElement);
+
+            container.addEventListener('pointerdown', (e) => {
+                isUserInteractingStatue = true;
+                onPointerDownXStatue = e.clientX;
+                onPointerDownYStatue = e.clientY;
+                onPointerDownLonStatue = lonStatue;
+                onPointerDownLatStatue = latStatue;
+            });
+            document.addEventListener('pointermove', (e) => {
+                if (isUserInteractingStatue) {
+                    lonStatue = (onPointerDownXStatue - e.clientX) * 0.1 + onPointerDownLonStatue;
+                    latStatue = (e.clientY - onPointerDownYStatue) * 0.1 + onPointerDownLatStatue;
+                }
+            });
+            document.addEventListener('pointerup', () => {
+                isUserInteractingStatue = false;
+            });
+
+            animateThreeStatue();
+        }
+
+        function animateThreeStatue() {
+            requestAnimationFrame(animateThreeStatue);
+            if (isStatueCloseupOpen) {
+                latStatue = Math.max(-85, Math.min(85, latStatue));
+                const phi = THREE.MathUtils.degToRad(90 - latStatue);
+                const theta = THREE.MathUtils.degToRad(lonStatue);
+
+                threeCameraStatue.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                threeCameraStatue.target.y = 500 * Math.cos(phi);
+                threeCameraStatue.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+                threeCameraStatue.lookAt(threeCameraStatue.target);
+                threeRendererStatue.render(threeSceneStatue, threeCameraStatue);
+            }
+        }
+
+        function openStatueCloseupView() {
+            sfx.playClick();
+            isStatueCloseupOpen = true;
+            document.getElementById('statue-closeup-container').classList.remove('hidden');
+            onWindowResize();
+        }
+
+        function closeStatueCloseupView() {
+            sfx.playClick();
+            isStatueCloseupOpen = false;
+            document.getElementById('statue-closeup-container').classList.add('hidden');
+        }
+
+        function openPaintingGame() {
+            sfx.playClick();
+            document.getElementById('painting-game-modal').classList.remove('hidden');
+            resetPuzzleState();
+        }
+
+        function closePaintingGame() {
+            sfx.playClick();
+            document.getElementById('painting-game-modal').classList.add('hidden');
+        }
+
+        function resetPuzzleState() {
+            state.puzzle.playerInput = [];
+            state.puzzle.isPlayingSeq = false;
+            document.getElementById('puzzle-status').innerText = '点击"播放光芒闪烁顺序"开始挑战';
+            
+            for (let i = 0; i < 5; i++) {
+                const orb = document.getElementById(`orb-${i}`);
+                orb.classList.remove('bg-amber-300', 'scale-125');
+                orb.classList.add('bg-amber-400/40');
+            }
+        }
+
+        function startSequenceGame() {
+            if (state.puzzle.isPlayingSeq) return;
+            resetPuzzleState();
+            state.puzzle.isPlayingSeq = true;
+
+            let step = 0;
+            const seq = state.puzzle.sequence;
+            document.getElementById('puzzle-status').innerText = '正在播放光芒闪烁顺序，请仔细观察...';
+
+            const interval = setInterval(() => {
+                if (step > 0) {
+                    const prevOrb = document.getElementById(`orb-${seq[step - 1]}`);
+                    prevOrb.classList.remove('bg-amber-300', 'scale-125');
+                    prevOrb.classList.add('bg-amber-400/40');
+                }
+
+                if (step < seq.length) {
+                    const currentIdx = seq[step];
+                    const currentOrb = document.getElementById(`orb-${currentIdx}`);
+                    currentOrb.classList.remove('bg-amber-400/40');
+                    currentOrb.classList.add('bg-amber-300', 'scale-125');
+                    sfx.playTone(300 + currentIdx * 100, 0.25);
+                    step++;
+                } else {
+                    clearInterval(interval);
+                    state.puzzle.isPlayingSeq = false;
+                    document.getElementById('puzzle-status').innerText = '请按照刚才的顺序依次点击5个光芒！';
+                }
+            }, 750);
+        }
+
+        function handleOrbClick(index) {
+            if (state.puzzle.isPlayingSeq || state.puzzle.solved) return;
+
+            sfx.playTone(300 + index * 100, 0.2);
+            state.puzzle.playerInput.push(index);
+
+            const orb = document.getElementById(`orb-${index}`);
+            orb.classList.add('bg-amber-300', 'scale-125');
+            setTimeout(() => {
+                orb.classList.remove('bg-amber-300', 'scale-125');
+            }, 250);
+
+            const currentStep = state.puzzle.playerInput.length - 1;
+            if (state.puzzle.playerInput[currentStep] !== state.puzzle.sequence[currentStep]) {
+                sfx.playTone(150, 0.4);
+                document.getElementById('puzzle-status').innerText = '顺序错误！请重新点击"播放光芒闪烁顺序"。';
+                state.puzzle.playerInput = [];
+                return;
+            }
+
+            if (state.puzzle.playerInput.length === state.puzzle.sequence.length) {
+                state.puzzle.solved = true;
+                sfx.playSuccess();
+                document.getElementById('puzzle-status').innerText = '🎉 破解成功！获得了钥匙道具！';
+
+                const keyItem = {
+                    id: 'key_scene1',
+                    name: '古朴钥匙',
+                    img: ASSETS.keyItem,
+                    desc: '似乎是展览馆某个房间的钥匙。精铁铸造，年代久远。'
+                };
+
+                setTimeout(() => {
+                    closePaintingGame();
+                    addItemToInventory(keyItem);
+                }, 1200);
+            }
+        }
+
+        function switchScene(sceneNum) {
+            sfx.playTorch();
+            state.currentScene = sceneNum;
+            isPaintingWorldOpen = sceneNum === 5;
+
+            const scene1El = document.getElementById('scene1-container');
+            const scene2El = document.getElementById('scene2-container');
+            const scene3El = document.getElementById('scene3-container');
+            const scene4El = document.getElementById('scene4-container');
+            const scene5El = document.getElementById('scene5-container');
+            const scene6El = document.getElementById('scene6-container');
+            const scene7El = document.getElementById('scene7-container');
+            const scene8El = document.getElementById('scene8-container');
+            const scene9El = document.getElementById('scene9-container');
+            const scene10El = document.getElementById('scene10-container');
+            const scene11El = document.getElementById('scene11-container');
+            const scene12El = document.getElementById('scene12');
+            const scene13El = document.getElementById('scene13');
+            const sceneTitleEl = document.getElementById('scene-title');
+
+            scene1El.classList.add('hidden');
+            scene2El.classList.add('hidden');
+            scene3El.classList.add('hidden');
+            scene4El.classList.add('hidden');
+            scene5El.classList.add('hidden');
+            scene6El.classList.add('hidden');
+            scene7El.classList.add('hidden');
+            scene8El.classList.add('hidden');
+            scene9El.classList.add('hidden');
+            scene10El.classList.add('hidden');
+            scene11El.classList.add('hidden');
+            scene12El.classList.add('hidden');
+            scene13El.classList.add('hidden');
+
+            if (sceneNum === 1) {
+                scene1El.classList.remove('hidden');
+                sceneTitleEl.innerText = '场景一：黑夜展馆大厅';
+            } else if (sceneNum === 2) {
+                scene2El.classList.remove('hidden');
+                sceneTitleEl.innerText = '场景二：秘色画长廊 (360°全景)';
+            } else if (sceneNum === 3) {
+                scene3El.classList.remove('hidden');
+                sceneTitleEl.innerText = '场景三：黑暗雕像馆';
+            } else if (sceneNum === 4) {
+                scene4El.classList.remove('hidden');
+                sceneTitleEl.innerText = '场景四：机密档案馆';
+            } else if (sceneNum === 5) {
+                scene5El.classList.remove('hidden');
+                sceneTitleEl.innerText = '画中世界';
+                isPaintingWorldOpen = true;
+                onWindowResize();
+            } else if (sceneNum === 6) {
+                scene6El.classList.remove('hidden');
+                sceneTitleEl.innerText = '画中世界：老工匠';
+            } else if (sceneNum === 7) {
+                scene7El.classList.remove('hidden');
+                sceneTitleEl.innerText = '窑房';
+            } else if (sceneNum === 8) {
+                scene8El.classList.remove('hidden');
+                sceneTitleEl.innerText = '内部窑房 · 360°全景';
+                onWindowResize();
+            } else if (sceneNum === 9) {
+                scene9El.classList.remove('hidden');
+                sceneTitleEl.innerText = '陶瓷架子 · 归位解谜';
+            } else if (sceneNum === 10) {
+                scene10El.classList.remove('hidden');
+                sceneTitleEl.innerText = '现实博物馆 · 明亮大厅';
+                onWindowResize();
+            } else if (sceneNum === 11) {
+                scene11El.classList.remove('hidden');
+                sceneTitleEl.innerText = '明亮壁画长廊 · 360°全景';
+                onWindowResize();
+            } else if (sceneNum === 13) {scene13El.classList.remove('hidden');sceneTitleEl.innerText='明亮巨大陶瓷雕像展馆 · 360°全景';if(!threeRendererBrightStatueNew){initBrightPanorama('bright-statue-new-panorama','https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E9%9B%95%E5%83%8F.jpg','statueNew');}onWindowResize();} else if (sceneNum === 12) {
+                scene12El.classList.remove('hidden');
+                sceneTitleEl.innerText = '明亮巨大陶瓷雕像展馆 · 360°全景';
+                initBrightPanorama('bright-statue-panorama','https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E9%9B%95%E5%83%8F.jpg','statue');
+                onWindowResize();
+            }
+            onWindowResize();
+        }
+
+        function restartGame(){
+            sfx.playClick();
+
+            // 重新开始一轮：直接回到最初的黑暗展馆大厅，不重新播放开场页，
+            // 并彻底清空本轮所有道具、解锁、谜题和剧情进度。音乐音量等用户设置保留。
+            state.currentScene = 1;
+            state.inputMode = 'hand';
+            state.isTorchOn = true;
+            state.torchPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            state.torchRadius = 150;
+            state.inventory = [];
+            state.puzzle = { sequence: [0, 3, 1, 4, 2], playerInput: [], isPlayingSeq: false, solved: false };
+            state.statueToolFound = false;
+            state.newspaperFound = false;
+            state.safeUnlocked = false;
+            state.muralRepaired = false;
+            state.isWebcamCardCollapsed = false;
+            state.prologueRead = true;
+            state.paintingWorldUnlocked = false;
+            state.artisanToolDelivered = false;
+            state.innerKilnKeyFound = false;
+            state.ceramicShelfSolved = false;
+            state.pinchLatch = false;
+            state.archivesUnlocked = false;
+            state.artisanStoryPlayed = false;
+            state.returnMuseumPlayed = false;
+            state.ceramicNecklaceFound = false;
+            state.fanFound = false;
+            state.paintingMistCleared = false;
+
+            // 重置场景外部状态，防止上一轮的 360°拖动/弹窗状态残留。
+            isMuralOpen = false;
+            isPaintingWorldOpen = false;
+            isStatueCloseupOpen = false;
+            isUserInteracting2 = false;
+            isUserInteractingStatue = false;
+            isUserInteractingInnerKiln = false;
+            isUserInteractingBrightMuseum = false;
+            isUserInteractingBrightMural = false;
+            lon2 = lat2 = 0;
+            lonStatue = latStatue = 0;
+            lonPaintingWorld = latPaintingWorld = 0;
+            lonInnerKiln = latInnerKiln = 0;
+            lonBrightMuseum = latBrightMuseum = 0;
+            lonBrightMural = latBrightMural = 0;
+            lonBrightStatueNew = latBrightStatueNew = 0;
+
+            // 关闭可能残留的剧情/道具弹窗，确保从干净状态开始。
+            document.querySelectorAll('.fixed.inset-0.z-40, .fixed.inset-0.z-50, .fixed.inset-0.z-\[60\], .fixed.inset-0.z-\[80\]').forEach(el => {
+                if (el.id !== 'game-header') el.classList.add('hidden');
+            });
+            ['prologue-screen','prologue-material-screen','painting-game-modal','item-modal','clue-modal','mural-modal','story-video-modal','return-video-modal','story-middle-screen'].forEach(id=>{
+                const el=document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+
+            document.getElementById('game-header').classList.remove('hidden');
+            document.getElementById('torch-status-text').innerText = '手电筒：开';
+            updateInputModeUI();
+            initInventoryUI();
+
+            // 通过统一场景切换入口回到最初黑暗大厅，并让当前版本的道具/迷雾 UI 同步刷新。
+            switchScene(1);
+            setTimeout(()=>{
+                if (typeof window.refreshFeatureUI === 'function') window.refreshFeatureUI();
+                if (typeof initInventoryUI === 'function') initInventoryUI();
+            }, 50);
+        }
+
+        function toggleInputMode() {
+            sfx.playClick();
+            state.inputMode = state.inputMode === 'hand' ? 'mouse' : 'hand';
+            updateInputModeUI();
+        }
+
+        function updateInputModeUI() {
+            const icon = document.getElementById('input-mode-icon');
+            const text = document.getElementById('input-mode-text');
+            if (state.inputMode === 'hand') {
+                icon.className = 'fa-solid fa-hand-pointer text-amber-400';
+                text.innerText = '控制器：手势模式';
+            } else {
+                icon.className = 'fa-solid fa-mouse text-amber-400';
+                text.innerText = '控制器：鼠标模式';
+            }
+        }
+
+        function toggleFlashlight() {
+            sfx.playTorch();
+            state.isTorchOn = !state.isTorchOn;
+            document.getElementById('torch-status-text').innerText = `手电筒：${state.isTorchOn ? '开' : '关'}`;
+        }
+
+        function showPrologueScreen() {
+            sfx.playClick();
+            document.getElementById('prologue-screen').classList.remove('hidden');
+        }
+
+        function enterGameFromPrologue() {
+            sfx.playClick();
+            document.getElementById('prologue-screen').classList.add('hidden');
+            document.getElementById('prologue-material-screen').classList.remove('hidden');
+            state.prologueRead = true;
+        }
+
+        function startActualGame() {
+            sfx.playClick();
+            document.getElementById('prologue-material-screen').classList.add('hidden');
+            document.getElementById('game-header').classList.remove('hidden');
+            switchScene(1);
+        }
+
+        function toggleWebcamCardCollapse() {
+            sfx.playClick();
+            const body = document.getElementById('webcam-card-body');
+            const icon = document.getElementById('webcam-collapse-icon');
+            state.isWebcamCardCollapsed = !state.isWebcamCardCollapsed;
+            if (state.isWebcamCardCollapsed) {
+                body.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-up text-xs';
+            } else {
+                body.classList.remove('hidden');
+                icon.className = 'fa-solid fa-chevron-down text-xs';
+            }
+        }
+
+        function onWindowResize() {
+            if (scene1Canvas) {
+                scene1Canvas.width = window.innerWidth;
+                scene1Canvas.height = window.innerHeight;
+            }
+            if (scene3Canvas) {
+                scene3Canvas.width = window.innerWidth;
+                scene3Canvas.height = window.innerHeight;
+            }
+            if (scene4Canvas) {
+                scene4Canvas.width = window.innerWidth;
+                scene4Canvas.height = window.innerHeight;
+            }
+            if (threeCamera2 && threeRenderer2) {
+                threeCamera2.aspect = window.innerWidth / window.innerHeight;
+                threeCamera2.updateProjectionMatrix();
+                threeRenderer2.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraStatue && threeRendererStatue) {
+                threeCameraStatue.aspect = window.innerWidth / window.innerHeight;
+                threeCameraStatue.updateProjectionMatrix();
+                threeRendererStatue.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraPaintingWorld && threeRendererPaintingWorld) {
+                threeCameraPaintingWorld.aspect = window.innerWidth / window.innerHeight;
+                threeCameraPaintingWorld.updateProjectionMatrix();
+                threeRendererPaintingWorld.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraInnerKiln && threeRendererInnerKiln) {
+                threeCameraInnerKiln.aspect = window.innerWidth / window.innerHeight;
+                threeCameraInnerKiln.updateProjectionMatrix();
+                threeRendererInnerKiln.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraBrightMuseum && threeRendererBrightMuseum) {
+                threeCameraBrightMuseum.aspect = window.innerWidth / window.innerHeight;
+                threeCameraBrightMuseum.updateProjectionMatrix();
+                threeRendererBrightMuseum.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraBrightMural && threeRendererBrightMural) {
+                threeCameraBrightMural.aspect = window.innerWidth / window.innerHeight;
+                threeCameraBrightMural.updateProjectionMatrix();
+                threeRendererBrightMural.setSize(window.innerWidth, window.innerHeight);
+            }
+            if (threeCameraBrightStatueNew && threeRendererBrightStatueNew) {
+                threeCameraBrightStatueNew.aspect = window.innerWidth / window.innerHeight;
+                threeCameraBrightStatueNew.updateProjectionMatrix();
+                threeRendererBrightStatueNew.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // 提前让最后的明亮雕像馆全景进入浏览器缓存，真正点击进入时无需从零开始下载。
+            const brightStatueWarmup = new Image();
+            brightStatueWarmup.decoding = 'async';
+            brightStatueWarmup.fetchPriority = 'high';
+            brightStatueWarmup.src = 'https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%98%8E%E4%BA%AE%E7%9A%84%E9%9B%95%E5%83%8F.jpg';
+
+            initInventoryUI();
+            initScene1Canvas();
+            initScene3Canvas();
+            initScene4Canvas();
+            initMuralCanvas();
+            initThreeJS2();
+            initThreeJSStatue();
+            initThreeJSPaintingWorld();
+            initThreeJSInnerKiln();
+            initBrightPanorama('bright-museum-three-container', ASSETS.brightMuseumHall, 'museum');
+            initBrightPanorama('bright-mural-three-container', ASSETS.brightMuralHall, 'mural');
+            animateBrightPanorama();
+            const artisanVideo=document.getElementById('artisan-story-video');
+            if(artisanVideo) artisanVideo.addEventListener('ended', showStoryMiddle);
+            const returnVideo=document.getElementById('return-museum-video');
+            if(returnVideo) {
+                returnVideo.addEventListener('ended', finishReturnMuseumVideo);
+                returnVideo.preload='auto';
+                returnVideo.load();
+            }
+            initWebcamMediaPipe();
+        });
+
+        window.addEventListener('resize', onWindowResize);
+    </script>
+<!-- explore_museum_v3 requested adjustments applied -->
+
+<style>
+/* v4 精修：深黑灰磨砂玻璃UI */
+.frosted-panel,.frosted-panel-gold{background:rgba(18,18,22,.62)!important;backdrop-filter:blur(18px) saturate(130%);border-color:rgba(255,255,255,.16)!important;box-shadow:0 10px 40px rgba(0,0,0,.45)!important}
+#flashlight-canvas{filter:drop-shadow(0 0 18px rgba(255,220,140,.35));}
+#webcam-card{backdrop-filter:blur(16px)!important;background:rgba(15,15,18,.7)!important}
+.ceramic-piece{cursor:grab!important;touch-action:none}
+</style>
+<audio id="scene-bgm" loop preload="auto"></audio>
+<script>
+/* v4 增量修复，仅覆盖指定模块 */
+(function(){
+ const fear='https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E6%81%90%E6%80%96%E9%9F%B3%E9%A2%91.MP3';
+ const painting='https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E7%94%BB%E4%B8%AD%E4%B8%96%E7%95%8C%E9%9F%B3%E9%A2%91.MP3';
+ const bright='https://raw.githubusercontent.com/sitiaisyah693-code/-/main/%E6%98%8E%E4%BA%AE%E9%9F%B3%E4%B9%90.MP3';
+ let bg=document.getElementById('scene-bgm');
+ if(bg){bg.volume=.45;}
+ window.setSceneBGM=function(scene){if(!bg)return;let src=(scene>=1&&scene<=4)?fear:(scene>=5&&scene<=9)?painting:bright;if(!bg.src.endsWith(src)){bg.src=src;bg.play().catch(()=>{});}};
+ const oldSwitch=window.switchScene;
+ window.switchScene=function(n){oldSwitch(n);setTimeout(()=>setSceneBGM(n),200);};
+ // 手电筒柔边：替换合成层样式
+ const oldRender=window.renderFlashlight;
+ window.renderFlashlight=function(){if(typeof oldRender==='function')oldRender();const c=document.getElementById('flashlight-canvas');if(c)c.style.filter='drop-shadow(0 0 22px rgba(255,230,150,.35)) blur(.15px)';};
+ // 手势增强：重新绑定结果处理（不改变场景逻辑）
+ const oldHand=window.onHandResults;
+ window.onHandResults=function(r){
+   if(oldHand)oldHand(r);
+   if(r.multiHandLandmarks&&r.multiHandLandmarks[0]&&window.state){
+    let lm=r.multiHandLandmarks[0],x=(1-lm[8].x)*innerWidth,y=lm[8].y*innerHeight;
+    if(state.inputMode==='hand'){
+      state.torchPos.x+=(x-state.torchPos.x)*.45;state.torchPos.y+=(y-state.torchPos.y)*.45;
+      let d=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+      state.torchRadius+=(100+Math.min(170,d*900)-state.torchRadius)*.3;
+    }
+   }
+ };
+ // 陶瓷拖拽增强
+ window.addEventListener('pointerdown',e=>{let t=e.target.closest('.ceramic-piece');if(t){t.setPointerCapture(e.pointerId);t.dataset.drag='1';}});
+ window.addEventListener('pointermove',e=>{let t=document.querySelector('.ceramic-piece[data-drag="1"]');if(t){t.style.left=(e.clientX-t.offsetWidth/2)+'px';t.style.top=(e.clientY-t.offsetHeight/2)+'px';}});
+ window.addEventListener('pointerup',()=>{let t=document.querySelector('.ceramic-piece[data-drag="1"]');if(t)t.dataset.drag='0';});
+})();
+</script>
+
+<script>
+// final patch: only volume binding + ceramic skip + remove wrong bright-left scene
+(function(){
+ const slider=document.getElementById('music-volume');
+ const toggle=document.getElementById('music-toggle');
+ const bg=document.getElementById('scene-bgm');
+ let volume=parseFloat(localStorage.getItem('museumVolume')||'0.5');
+ if(slider){
+   slider.value=volume;
+   slider.addEventListener('input',()=>{
+     volume=parseFloat(slider.value);
+     localStorage.setItem('museumVolume',volume);
+     if(bg) bg.volume=volume;
+     if(window.backgroundMusic) window.backgroundMusic.volume=volume;
+   });
+ }
+ if(bg) bg.volume=volume;
+ if(toggle){
+   toggle.addEventListener('click',()=>{
+     if(!bg)return;
+     if(bg.muted){bg.muted=false; toggle.innerText='关闭音乐';}
+     else{bg.muted=true; toggle.innerText='开启音乐';}
+   });
+ }
+ window.setGlobalMusicVolume=function(v){
+   volume=v;
+   if(slider)slider.value=v;
+   if(bg)bg.volume=v;
+ };
+
+ // ceramic puzzle skip button
+ window.skipCeramicPuzzle=function(){
+   if(window.state){
+     state.ceramicShelfSolved=true;
+     state.innerKilnKeyFound=true;
+   }
+   if(typeof addItemToInventory==='function'){
+     if(!state.inventory || !state.inventory.some(i=>i.id==='inner_kiln_key')){
+       addItemToInventory({id:'inner_kiln_key',name:'内部窑房的钥匙',img:ASSETS.innerKilnKey,desc:'内部窑房的钥匙'});
+     }
+   }
+   if(typeof initInventoryUI==='function')initInventoryUI();
+   if(typeof showClue==='function')showClue('跳过陶瓷架子解谜','你选择跳过摆放步骤，直接获得内部窑房的钥匙。');
+   if(typeof switchScene==='function')switchScene(3);
+ };
+
+ // 保留明亮大厅左侧的新雕像展馆入口；不修改其他场景入口。
+ document.addEventListener('DOMContentLoaded',()=>{
+   const hall=document.getElementById('scene10-container');
+   if(hall){
+     const leftEntry=hall.querySelector('button[onclick*="switchScene(13)"]');
+     if(leftEntry) leftEntry.style.display='';
+   }
+ });
+})();
+</script>
+
+
+<!-- v5.8：3D全景内固定道具 + 世界空间动态迷雾；只调整本次指定交互 -->
+<style>
+/* 道具不再作为DOM提示层出现：仅保留隐藏的兼容节点，真正拾取物由Three.js Sprite承载。 */
+#ceramic-necklace-pickup,
+#dark-gallery-fan-pickup,
+#painting-world-mist,
+#painting-world-mist{display:none !important;}
+</style>
+<script>
+(function(){
+    const NECKLACE_IMG = 'https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E9%99%B6%E7%93%B7%E9%A1%B9%E9%93%BE.png';
+    const FAN_IMG = 'https://raw.githubusercontent.com/sitiaisyah693-code/-/main/2.0%E6%89%87%E5%AD%90.png';
+
+    ASSETS.ceramicNecklaceItem = NECKLACE_IMG;
+    ASSETS.fanItem = FAN_IMG;
+    state.ceramicNecklaceFound = !!state.ceramicNecklaceFound;
+    state.fanFound = !!state.fanFound;
+    state.paintingMistCleared = !!state.paintingMistCleared;
+
+    let necklaceSprite = null;
+    let fanSprite = null;
+    let paintingMistGroup = null;
+    let mistClock = null;
+
+    const pickupInteraction = {
+        statue: {active:false, downX:0, downY:0},
+        gallery: {active:false, downX:0, downY:0}
+    };
+
+    function hasItem(id){ return state.inventory.some(item => item.id === id); }
+
+    function panoramaPoint(lonDeg, latDeg, radius=455){
+        const phi = THREE.MathUtils.degToRad(90 - latDeg);
+        const theta = THREE.MathUtils.degToRad(lonDeg);
+        return new THREE.Vector3(
+            radius * Math.sin(phi) * Math.cos(theta),
+            radius * Math.cos(phi),
+            radius * Math.sin(phi) * Math.sin(theta)
+        );
+    }
+
+    function darkenSpriteMaterial(texture, brightness=0.72, opacity=0.84){
+        return new THREE.SpriteMaterial({
+            map:texture,
+            transparent:true,
+            opacity,
+            color:new THREE.Color(brightness, brightness, brightness),
+            depthWrite:false,
+            depthTest:true,
+            sizeAttenuation:true
+        });
+    }
+
+    function applySpriteScale(sprite, texture, height){
+        const image = texture && texture.image;
+        const aspect = image && image.width && image.height ? image.width / image.height : 1;
+        sprite.scale.set(height * aspect, height, 1);
+    }
+
+    function createPanoramaPickup({scene, textureUrl, position, size, brightness, opacity, kind}){
+        let sprite = null;
+        const texture = new THREE.TextureLoader().load(textureUrl, (loaded)=>{
+            if(sprite) applySpriteScale(sprite, loaded, size);
+        });
+        const material = darkenSpriteMaterial(texture, brightness, opacity);
+        sprite = new THREE.Sprite(material);
+        sprite.position.copy(position);
+        sprite.userData.panoramaPickup = kind;
+        sprite.renderOrder = 20;
+        sprite.scale.set(size, size, 1);
+        scene.add(sprite);
+        return sprite;
+    }
+
+    function ndcFromPointer(event, renderer){
+        const rect = renderer.domElement.getBoundingClientRect();
+        return new THREE.Vector2(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((event.clientY - rect.top) / rect.height) * 2 + 1
+        );
+    }
+
+    function bindPanoramaPickup(container, renderer, camera, scene, getSprite, interaction, onCollect){
+        const raycaster = new THREE.Raycaster();
+        container.addEventListener('pointerdown', (event)=>{
+            if(event.target !== renderer.domElement) return;
+            const sprite = getSprite();
+            if(!sprite || !sprite.visible) return;
+            raycaster.setFromCamera(ndcFromPointer(event, renderer), camera);
+            const hits = raycaster.intersectObject(sprite, false);
+            if(!hits.length) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            interaction.active = true;
+            interaction.downX = event.clientX;
+            interaction.downY = event.clientY;
+        }, true);
+
+        container.addEventListener('pointerup', (event)=>{
+            if(!interaction.active) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const moved = Math.hypot(event.clientX - interaction.downX, event.clientY - interaction.downY);
+            interaction.active = false;
+            if(moved < 14) onCollect();
+        }, true);
+
+        container.addEventListener('pointercancel', (event)=>{
+            if(!interaction.active) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            interaction.active = false;
+        }, true);
+    }
+
+    function createFogTexture(){
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext('2d');
+        const g = ctx.createRadialGradient(256,160,18,256,160,250);
+        g.addColorStop(0,'rgba(255,255,255,0.96)');
+        g.addColorStop(0.28,'rgba(255,255,255,0.88)');
+        g.addColorStop(0.56,'rgba(255,255,255,0.58)');
+        g.addColorStop(0.78,'rgba(255,255,255,0.25)');
+        g.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=g;
+        ctx.fillRect(0,0,512,320);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function createPaintingWorldMist(){
+        if(!threeScenePaintingWorld || paintingMistGroup) return;
+        const group = new THREE.Group();
+        group.name = 'painting-world-3d-mist';
+        group.position.copy(panoramaPoint(1, -2, 448));
+        group.renderOrder = 15;
+
+        const texture = createFogTexture();
+        const specs = [
+            {x:-42,y:4,z:5,w:250,h:150,o:.84,r: 0.00},
+            {x: 22,y:14,z:-8,w:285,h:176,o:.78,r:-0.10},
+            {x: 70,y:-8,z:12,w:235,h:148,o:.70,r: 0.12},
+            {x:-78,y:-10,z:-5,w:220,h:138,o:.66,r:-0.16},
+            {x:  0,y:34,z:18,w:210,h:122,o:.62,r: 0.08},
+            {x: 42,y:-30,z:-12,w:195,h:118,o:.56,r: 0.18}
+        ];
+        group.userData.fogLayers = [];
+
+        specs.forEach((s,i)=>{
+            const mat = new THREE.SpriteMaterial({
+                map:texture,
+                transparent:true,
+                opacity:s.o,
+                color:0xffffff,
+                depthWrite:false,
+                depthTest:true,
+                blending:THREE.NormalBlending,
+                sizeAttenuation:true
+            });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(s.x,s.y,s.z);
+            sprite.scale.set(s.w,s.h,1);
+            sprite.material.rotation = s.r;
+            sprite.renderOrder = 15 + i;
+            sprite.userData.baseX=s.x;
+            sprite.userData.baseY=s.y;
+            sprite.userData.baseZ=s.z;
+            sprite.userData.baseW=s.w;
+            sprite.userData.baseH=s.h;
+            sprite.userData.baseOpacity=s.o;
+            sprite.userData.phase=i*0.93;
+            sprite.userData.speed=0.38 + i*0.045;
+            sprite.userData.amp=7 + (i%3)*4;
+            group.add(sprite);
+            group.userData.fogLayers.push(sprite);
+        });
+
+        threeScenePaintingWorld.add(group);
+        paintingMistGroup=group;
+        mistClock={start:performance.now()};
+        updatePaintingWorldMistVisibility();
+    }
+
+    function updatePaintingWorldMistVisibility(){
+        if(!paintingMistGroup) return;
+        paintingMistGroup.visible = state.currentScene === 5 && !state.paintingMistCleared;
+    }
+
+    function animatePaintingWorldMist(){
+        requestAnimationFrame(animatePaintingWorldMist);
+        if(!paintingMistGroup || !paintingMistGroup.visible) return;
+        const t=(performance.now()-mistClock.start)/1000;
+        paintingMistGroup.userData.fogLayers.forEach((sprite,i)=>{
+            const p=sprite.userData;
+            const a=t*p.speed+p.phase;
+            sprite.position.x=p.baseX + Math.sin(a)*p.amp;
+            sprite.position.y=p.baseY + Math.sin(a*0.73+1.2)*(p.amp*0.55);
+            sprite.position.z=p.baseZ + Math.cos(a*0.61+0.6)*(p.amp*0.45);
+            const pulse=1 + Math.sin(a*0.52+i)*0.055;
+            sprite.scale.x = sprite.userData.baseW * pulse;
+            sprite.scale.y = sprite.userData.baseH * pulse;
+            sprite.material.opacity = sprite.userData.baseOpacity * (0.92 + Math.sin(a*0.43+0.8)*0.08);
+        });
+    }
+
+    function ensureActionUI(){
+        const scene5 = document.getElementById('scene5-container');
+        if(!scene5) return;
+
+        if(!document.getElementById('painting-world-fan-action')){
+            const wrap = document.createElement('div');
+            wrap.id = 'painting-world-fan-action';
+            wrap.className = 'hidden absolute left-6 top-24 z-50';
+            wrap.innerHTML = `
+                <button type="button" onclick="dispersePaintingWorldMist()" class="px-6 py-3 rounded-2xl frosted-panel-gold text-amber-100 font-bold flex items-center gap-2.5 shadow-2xl hover:scale-105 transition border border-amber-400/70">
+                    <img src="${FAN_IMG}" alt="扇子" class="w-10 h-10 object-contain">
+                    <span>使用扇子驱散迷雾</span>
+                </button>`;
+            scene5.appendChild(wrap);
+        }
+
+        if(!document.getElementById('painting-world-return-action')){
+            const wrap = document.createElement('div');
+            wrap.id = 'painting-world-return-action';
+            wrap.className = 'hidden absolute right-6 top-24 z-50';
+            wrap.innerHTML = `
+                <button type="button" onclick="returnToDarkMuseumFromPaintingWorld()" class="px-6 py-3 rounded-2xl frosted-panel border border-amber-400/70 text-amber-100 font-bold shadow-2xl hover:scale-105 transition">
+                    <i class="fa-solid fa-arrow-rotate-left text-amber-300 mr-2"></i>返回黑暗展览馆
+                </button>`;
+            scene5.appendChild(wrap);
+        }
+    }
+
+    function create3DPickups(){
+        ensureActionUI();
+        if(threeSceneStatue && threeRendererStatue && !necklaceSprite){
+            /* 初始视角中雕像右手附近；挂在全景球体内部，因此拖动视角时会随空间一起移动。 */
+            necklaceSprite = createPanoramaPickup({
+                scene:threeSceneStatue,
+                textureUrl:NECKLACE_IMG,
+                position:panoramaPoint(164, 16, 448),
+                size:165,
+                brightness:0.70,
+                opacity:0.84,
+                kind:'ceramic_necklace'
+            });
+            bindPanoramaPickup(
+                document.getElementById('statue-three-container'),
+                threeRendererStatue,
+                threeCameraStatue,
+                threeSceneStatue,
+                ()=>necklaceSprite,
+                pickupInteraction.statue,
+                window.collectCeramicNecklace
+            );
+        }
+
+        if(threeScene2 && threeRenderer2 && !fanSprite){
+            /* 初始视角中画廊右侧地面区域；同样是3D世界坐标，而非UI覆盖层。 */
+            fanSprite = createPanoramaPickup({
+                scene:threeScene2,
+                textureUrl:FAN_IMG,
+                position:panoramaPoint(209, -54, 448),
+                size:300,
+                brightness:0.66,
+                opacity:0.88,
+                kind:'mysterious_fan'
+            });
+            bindPanoramaPickup(
+                document.getElementById('scene2-container'),
+                threeRenderer2,
+                threeCamera2,
+                threeScene2,
+                ()=>fanSprite,
+                pickupInteraction.gallery,
+                window.collectDarkGalleryFan
+            );
+        }
+
+        createPaintingWorldMist();
+        refresh3DFeatureVisibility();
+    }
+
+    function refresh3DFeatureVisibility(){
+        if(necklaceSprite){
+            necklaceSprite.visible = !(state.ceramicNecklaceFound || hasItem('ceramic_necklace'));
+        }
+        if(fanSprite){
+            fanSprite.visible = !(state.fanFound || hasItem('mysterious_fan'));
+        }
+        updatePaintingWorldMistVisibility();
+    }
+
+    window.collectCeramicNecklace = function(){
+        if(state.ceramicNecklaceFound || hasItem('ceramic_necklace')) return;
+        const item = {
+            id:'ceramic_necklace',
+            name:'陶瓷项链',
+            img:NECKLACE_IMG,
+            desc:'一条陶瓷做成的项链，看起来有些神秘。'
+        };
+        state.ceramicNecklaceFound = true;
+        addItemToInventory(item);
+        refresh3DFeatureVisibility();
+        refreshFeatureUI();
+    };
+
+    window.collectDarkGalleryFan = function(){
+        if(state.fanFound || hasItem('mysterious_fan')) return;
+        const item = {
+            id:'mysterious_fan',
+            name:'神秘扇子',
+            img:FAN_IMG,
+            desc:'一把落在黑暗画廊地上的扇子，似乎能够驱散某种遮蔽。'
+        };
+        state.fanFound = true;
+        addItemToInventory(item);
+        refresh3DFeatureVisibility();
+        refreshFeatureUI();
+    };
+
+    window.dispersePaintingWorldMist = function(){
+        if(!(state.fanFound || hasItem('mysterious_fan'))) return;
+        if(state.paintingMistCleared) return;
+        sfx.playSuccess();
+        state.paintingMistCleared = true;
+        refresh3DFeatureVisibility();
+        refreshFeatureUI();
+        showClue('迷雾已驱散','你挥动扇子，远处窑炉周围的动态迷雾渐渐散开，前方终于可以看清了。');
+    };
+
+    window.returnToDarkMuseumFromPaintingWorld = function(){
+        if(!(state.ceramicNecklaceFound || hasItem('ceramic_necklace'))){
+            showClue('无法返回','和展览馆的古画一模一样？但是没有办法回去了。');
+            return;
+        }
+        sfx.playClick();
+        switchScene(1);
+    };
+
+    function refreshFeatureUI(){
+        refresh3DFeatureVisibility();
+
+        ensureActionUI();
+        const fanAction = document.getElementById('painting-world-fan-action');
+        const returnAction = document.getElementById('painting-world-return-action');
+        if(fanAction){
+            const show = state.currentScene === 5 && (state.fanFound || hasItem('mysterious_fan')) && !state.paintingMistCleared;
+            fanAction.classList.toggle('hidden', !show);
+        }
+        if(returnAction){
+            const show = state.currentScene === 5 && (state.ceramicNecklaceFound || hasItem('ceramic_necklace'));
+            returnAction.classList.toggle('hidden', !show);
+        }
+
+        const lockedMessage = document.getElementById('painting-world-return-locked-message');
+        if(lockedMessage){
+            const unlocked = state.ceramicNecklaceFound || hasItem('ceramic_necklace');
+            lockedMessage.classList.toggle('hidden', unlocked);
+        }
+
+        const mistMessage = document.getElementById('painting-world-mist-message');
+        if(mistMessage){
+            mistMessage.classList.toggle('hidden', !(state.currentScene === 5 && !state.paintingMistCleared));
+        }
+
+        const artisanBtn = document.querySelector('#scene5-container button[onclick="openArtisanCloseup()"]');
+        if(artisanBtn){
+            artisanBtn.parentElement.classList.toggle('hidden', !state.paintingMistCleared);
+        }
+    }
+
+    /* 画中世界的迷雾与拾取物均挂在Three.js世界空间；只有操作按钮保留为UI。 */
+
+    document.addEventListener('DOMContentLoaded',()=>{
+        /* 原页面在此前的DOMContentLoaded回调中初始化三个全景；此回调注册在后面，因此这里等待它们完成后再添加世界空间对象。 */
+        setTimeout(()=>{
+            create3DPickups();
+            refreshFeatureUI();
+            animatePaintingWorldMist();
+        },80);
+    });
+
+    /* 场景切换后只刷新世界对象显隐，不创建任何新的DOM提示。 */
+    const originalSwitchScene = window.switchScene;
+    window.switchScene = function(n){
+        originalSwitchScene.apply(this, arguments);
+        setTimeout(()=>{
+            refresh3DFeatureVisibility();
+            refreshFeatureUI();
+        },0);
+    };
+
+    /* 雕像凑近页面打开后，再刷新一次项链显示状态。 */
+    const originalOpenStatue = window.openStatueCloseupView;
+    window.openStatueCloseupView = function(){
+        originalOpenStatue.apply(this, arguments);
+        setTimeout(()=>refresh3DFeatureVisibility(),0);
+    };
+})();
+</script></script>
+
+<style>
+/* v5.9：按实际全景素材重新定位拾取物 + 全屏动态烟雾 */
+#painting-world-mist-screen{
+  filter: blur(12px);
+  opacity: .92;
+  transform: scale(1.035);
+  pointer-events: none !important;
+  mix-blend-mode: screen;
+}
+</style>
+<script>
+(function(){
+    const NECKLACE = 'ceramic_necklace';
+    const FAN = 'mysterious_fan';
+    const deg = Math.PI / 180;
+
+    function panoramaPoint(lonDeg, latDeg, radius=455){
+        const phi = THREE.MathUtils.degToRad(90 - latDeg);
+        const theta = THREE.MathUtils.degToRad(lonDeg);
+        return new THREE.Vector3(
+            radius * Math.sin(phi) * Math.cos(theta),
+            radius * Math.cos(phi),
+            radius * Math.sin(phi) * Math.sin(theta)
+        );
+    }
+
+    function findPickup(scene, id){
+        if(!scene) return null;
+        return scene.children.find(obj => obj && obj.userData && obj.userData.panoramaPickup === id) || null;
+    }
+
+    function hasItem(id){
+        return Array.isArray(state.inventory) && state.inventory.some(item=>item.id===id);
+    }
+
+    function isFound(id){
+        if(id===NECKLACE) return !!state.ceramicNecklaceFound || hasItem(id);
+        if(id===FAN) return !!state.fanFound || hasItem(id);
+        return false;
+    }
+
+    function updatePickupVisibility(){
+        const necklace = findPickup(threeSceneStatue, NECKLACE);
+        const fan = findPickup(threeScene2, FAN);
+
+        if(necklace){
+            /* 实际素材 2.0雕像靠近.jpg：项链放到雕像右侧较低的手部位置。
+               需要把360视角转到手部附近后才显现，避免一进入就直接看到。 */
+            necklace.position.copy(panoramaPoint(164, 16, 448));
+            necklace.scale.set(165,165,1);
+            necklace.renderOrder = 24;
+            if(necklace.material){
+                necklace.material.opacity = .84;
+                necklace.material.color.setRGB(.64,.64,.64);
+            }
+            if(threeCameraStatue){
+                const objectDir = necklace.position.clone().normalize();
+                const viewDir = threeCameraStatue.target.clone().normalize();
+                const withinBearing = objectDir.dot(viewDir) > Math.cos(18*deg);
+                necklace.visible = isStatueCloseupOpen && !isFound(NECKLACE) && withinBearing;
+            }
+        }
+
+        if(fan){
+            /* 扇子素材：直接放在《2.0画长廊.jpg》的前方地面区域；
+               这是Three.js全景世界坐标，不是屏幕UI。玩家需要转动360°视角自己寻找。 */
+            fan.position.copy(panoramaPoint(-28, -48, 448));
+            fan.scale.set(440,440,1);
+            fan.renderOrder = 24;
+            if(fan.material){
+                fan.material.opacity = .94;
+                fan.material.color.setRGB(.56,.56,.56);
+                fan.material.depthTest = false;
+                fan.material.depthWrite = false;
+            }
+            /* 不再用18°视角阈值人为隐藏；让Three.js根据真实世界坐标决定是否进入视野。 */
+            fan.visible = state.currentScene === 2 && !isFound(FAN);
+        }
+    }
+
+    let mistCanvas=null, mistCtx=null, mistRAF=0;
+    const smoke=[];
+
+    function buildSmokeParticles(){
+        if(smoke.length) return;
+        const seed=[
+            [.04,.10,.26,.52,0.8,1.35], [.18,.20,.32,.62,1.8,1.15], [.34,.10,.30,.58,2.5,1.40],
+            [.50,.22,.34,.68,3.7,1.25], [.66,.12,.28,.55,4.4,1.45], [.82,.24,.36,.66,5.1,1.30],
+            [.96,.12,.24,.48,6.0,1.20], [.06,.46,.34,.62,6.8,1.30], [.25,.55,.38,.72,7.7,1.45],
+            [.46,.45,.42,.78,8.8,1.40], [.68,.56,.40,.74,9.6,1.55], [.90,.46,.34,.62,10.8,1.35],
+            [.12,.84,.38,.72,11.7,1.45], [.36,.76,.44,.80,12.8,1.55], [.61,.82,.46,.82,13.7,1.50],
+            [.86,.78,.40,.72,14.9,1.35]
+        ];
+        seed.forEach(([x,y,size,alpha,phase,stretch])=>smoke.push({x,y,size,alpha,phase,stretch}));
+    }
+
+    function resizeMist(){
+        if(!mistCanvas) return;
+        mistCanvas.width=window.innerWidth;
+        mistCanvas.height=window.innerHeight;
+    }
+
+    function addSmoke(ctx,x,y,rx,ry,alpha,rotation){
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(rotation);
+        const g=ctx.createRadialGradient(0,0,Math.min(rx,ry)*.04,0,0,Math.max(rx,ry));
+        g.addColorStop(0,`rgba(255,255,255,${alpha})`);
+        g.addColorStop(.30,`rgba(252,252,252,${alpha*.88})`);
+        g.addColorStop(.58,`rgba(246,246,246,${alpha*.52})`);
+        g.addColorStop(.82,`rgba(240,240,240,${alpha*.20})`);
+        g.addColorStop(1,'rgba(240,240,240,0)');
+        ctx.scale(rx/Math.max(rx,ry),ry/Math.max(rx,ry));
+        ctx.fillStyle=g;
+        ctx.beginPath();
+        ctx.arc(0,0,Math.max(rx,ry),0,Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function ensureMistCanvas(){
+        if(mistCanvas) return;
+        const scene5=document.getElementById('scene5-container');
+        if(!scene5) return;
+        mistCanvas=document.createElement('canvas');
+        mistCanvas.id='painting-world-mist-screen';
+        mistCanvas.className='absolute inset-0 w-full h-full z-30 pointer-events-none';
+        mistCanvas.setAttribute('aria-hidden','true');
+        scene5.appendChild(mistCanvas);
+        mistCtx=mistCanvas.getContext('2d');
+        buildSmokeParticles();
+        resizeMist();
+        if(!ensureMistCanvas.bound){
+            ensureMistCanvas.bound=true;
+            window.addEventListener('resize',resizeMist);
+        }
+        animateMist();
+    }
+
+    function animateMist(){
+        cancelAnimationFrame(mistRAF);
+        const loop=()=>{
+            mistRAF=requestAnimationFrame(loop);
+            if(!mistCanvas||!mistCtx) return;
+            const w=mistCanvas.width,h=mistCanvas.height;
+            mistCtx.clearRect(0,0,w,h);
+            const active=state.currentScene===5 && !state.paintingMistCleared;
+            mistCanvas.style.display=active?'block':'none';
+            if(!active) return;
+
+            const t=performance.now()/1000;
+            /* 底层薄雾 + 多层大烟团：全屏覆盖、边缘柔和、持续缓慢弥漫。 */
+            const veil=mistCtx.createRadialGradient(w*.5,h*.52,Math.min(w,h)*.08,w*.5,h*.52,Math.max(w,h)*.78);
+            veil.addColorStop(0,'rgba(255,255,255,.34)');
+            veil.addColorStop(.48,'rgba(255,255,255,.27)');
+            veil.addColorStop(.78,'rgba(255,255,255,.20)');
+            veil.addColorStop(1,'rgba(255,255,255,.12)');
+            mistCtx.fillStyle=veil;
+            mistCtx.fillRect(0,0,w,h);
+
+            smoke.forEach((p,i)=>{
+                const swayX=Math.sin(t*(.12+(i%4)*.018)+p.phase)*w*.065;
+                const swayY=Math.cos(t*(.10+(i%3)*.016)+p.phase*1.21)*h*.050;
+                const pulse=1+Math.sin(t*(.18+(i%5)*.02)+p.phase)*.12;
+                const x=p.x*w+swayX;
+                const y=p.y*h+swayY;
+                const r=p.size*Math.min(w,h)*pulse;
+                const alpha=p.alpha*(.92+Math.sin(t*.14+p.phase)*.08);
+                addSmoke(mistCtx,x,y,r*p.stretch,r,alpha,(Math.sin(t*.08+p.phase)*.12));
+            });
+        };
+        loop();
+    }
+
+    function hideOldWorldMist(){
+        const oldGroup=threeScenePaintingWorld && threeScenePaintingWorld.getObjectByName('painting-world-3d-mist');
+        if(oldGroup) oldGroup.visible=false;
+    }
+
+    const oldRefreshFeatureUI=window.refreshFeatureUI;
+    window.refreshFeatureUI=function(){
+        if(typeof oldRefreshFeatureUI==='function') oldRefreshFeatureUI.apply(this,arguments);
+        const locked=document.getElementById('painting-world-return-locked-message');
+        if(locked){
+            locked.classList.toggle('hidden', !!state.ceramicNecklaceFound || hasItem(NECKLACE));
+        }
+        ensureMistCanvas();
+        hideOldWorldMist();
+    };
+
+    const oldDisperse=window.dispersePaintingWorldMist;
+    window.dispersePaintingWorldMist=function(){
+        if(typeof oldDisperse==='function') oldDisperse.apply(this,arguments);
+        state.paintingMistCleared=true;
+        ensureMistCanvas();
+        hideOldWorldMist();
+        if(mistCanvas) mistCanvas.style.display='none';
+    };
+
+    /* 独立帧循环：不改动Three.js原有拖动代码，只同步世界空间拾取物的朝向与显隐。 */
+    function pickupLoop(){
+        requestAnimationFrame(pickupLoop);
+        updatePickupVisibility();
+        hideOldWorldMist();
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{
+        setTimeout(()=>{
+            ensureMistCanvas();
+            updatePickupVisibility();
+            hideOldWorldMist();
+            const locked=document.getElementById('painting-world-return-locked-message');
+            if(locked) locked.classList.toggle('hidden',!!state.ceramicNecklaceFound || hasItem(NECKLACE));
+            pickupLoop();
+        },180);
+    });
+})();
+</script>
+</body>
+</html>
